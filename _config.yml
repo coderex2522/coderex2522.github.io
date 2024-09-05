@@ -5,9 +5,9 @@ title: Rex Blog
 SEOTitle: 张鑫的博客 | Rex Blog
 header-img: img/home-bg.png
 email: rex6817@gmail.com
-description: "存储开发 | 张鑫，Web & Front-end Engineer | rex的个人博客呀"
-keyword: "rex, rex, wuml, 存储, Rex Blog, 博客，Web, Css, Javascript"
-url: "https://meilianwu.com/"              # your host, for absolute URL
+description: "存储开发 | Storage Engineer | Rex的个人博客呀"
+keyword: "Rex, 存储, Rex Blog"
+url: "https://coderex2522.github.io/"              # your host, for absolute URL
 baseurl: ""                             # for example, '/blog' if your blog hosted on 'host/blog'
 
 
@@ -18,7 +18,7 @@ favicon: favicon.ico
 
 # Sidebar settings
 sidebar: true                           # whether or not using Sidebar.
-sidebar-about-description: "Web Developer"
+sidebar-about-description: "Storage Engineer"
 sidebar-avatar: /img/avatar.png      # use absolute URL, seeing it's used in both `/` and `/about/`
 
 
@@ -31,7 +31,7 @@ featured-condition-size: 1              # A tag will be featured if the size of 
 RSS: false
 weibo_username:     false
 zhihu_username:     false
-github_username:    rex
+github_username:    coderex2522
 
 
 # Build settings
@@ -43,16 +43,14 @@ plugins: [jekyll-paginate]
 # Gitalk
 gitalk:
   enable: true    #是否开启Gitalk评论
-  clientID: a84c2a57837302767371                            #生成的clientID
-  clientSecret: 847046720bec629fbd3580d8f3cc617ab9d3a27a    #生成的clientSecret
-  repo: rex.github.io    #仓库名称
-  owner: rex    #github用户名
-  admin: rex
+  repo: coderex2522.github.io    #仓库名称
+  owner: coderex2522    #github用户名
+  admin: coderex2522
   # distractionFreeMode: true #是否启用类似FB的阴影遮罩
 
 
-# Favorite links
-Favorite Links: [
+# Favorite
+Favorite: [
   {
     title: "Tesla",
     href: "https://www.tesla.com/"
