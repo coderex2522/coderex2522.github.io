@@ -2,7 +2,7 @@
 layout:     post
 title:      "[今日算法] 两数之和"
 subtitle:   ""
-author:     "wml"
+author:     "rex"
 header-img: "img/algorithm/bg.jpg"
 header-mask:  0.5
 catalog: true
@@ -12,7 +12,7 @@ tags:
 ---
 ## 背景
 
-作为前端开发，对算法的要求可能没有那么高，但还是要有一些了解和涉猎 。新发现一个算法的网站[力扣](https://leetcode-cn.com/problemset/all/)，里面有大量从易到难的算法题，每日一练，相信时间久了肯定大有收获。
+作为存储开发，对算法的要求可能没有那么高，但还是要有一些了解和涉猎 。新发现一个算法的网站[力扣](https://leetcode-cn.com/problemset/all/)，里面有大量从易到难的算法题，每日一练，相信时间久了肯定大有收获。
 
 #### 难度
 

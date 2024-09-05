@@ -2,7 +2,7 @@
 layout:     post
 title:      "flex布局属性总结"
 subtitle:   ""
-author:     "wml"
+author:     "rex"
 header-img: "img/present/1.jpg"
 header-mask:  0.5
 catalog: true

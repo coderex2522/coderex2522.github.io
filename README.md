@@ -6,9 +6,9 @@ Hello World~ This is the blog that I record things.
 
 下面是博客搭建教程，更详细教程请戳[如何搭建jekyll主题的github.io博客](http://meilianwu.com/2018/05/31/blog-build.html)
 
-我的[github](https://github.com/wumeilian)
+我的[github](https://github.com/rex)
 
-![img](https://raw.githubusercontent.com/wumeilian/wumeilian.github.io/master/img/blog-build-6.png)
+![img](https://raw.githubusercontent.com/rex/rex.github.io/master/img/blog-build-6.png)
 
 ## 使用
 
@@ -36,9 +36,9 @@ Hello World~ This is the blog that I record things.
 
 ``` markdown
 # Site settings
-title: Wml Blog    # blog title
-SEOTitle: 吴美莲的博客 | Wml Blog   # seo title
-description: "前端开发"  # seo description
+title: Rex Blog    # blog title
+SEOTitle: 张鑫的博客 | Rex Blog   # seo title
+description: "存储开发"  # seo description
 url: "https://meilianwu.com/"     # your host, for absolute URL
 
 # Build settings
@@ -55,7 +55,7 @@ plugins: [jekyll-paginate]
 layout:     post
 title:      "如何搭建jekyll主题的github.io博客"
 subtitle:   ""
-author:     "wml"
+author:     "rex"
 header-img: "img/blog-build-1.png"
 header-mask:  0.5
 catalog: true
@@ -66,7 +66,7 @@ tags:
 
 ### 侧边栏
 
-![sidebar](https://raw.githubusercontent.com/wumeilian/wumeilian.github.io/master/img/readme-1.png)
+![sidebar](https://raw.githubusercontent.com/rex/rex.github.io/master/img/readme-1.png)
 
 侧边栏的配置在`_config.yml`中
 
@@ -118,8 +118,8 @@ friends: [{
 # SNS settings
 RSS: false
 weibo_username:     AnnualWu
-zhihu_username:     wml
-github_username:    wumeilian
+zhihu_username:     rex
+github_username:    rex
 ```
 
 在`_includes/footer.html`文件中有关于社交账号的展示，目前这里就列出了微博，知乎，推特，Facebook还有github的展示，如果想展示更多别的社交账号，只需要在文件下按以下格式添加即可，(eg.github的添加方式)
@@ -141,7 +141,7 @@ github_username:    wumeilian
 
 本文使用的是gitalk评论插件
 
-![gitalk](https://raw.githubusercontent.com/wumeilian/wumeilian.github.io/master/img/blog-build-17.png)
+![gitalk](https://raw.githubusercontent.com/rex/rex.github.io/master/img/blog-build-17.png)
 
 将这段代码插入`_layouts/_post.html`中
 

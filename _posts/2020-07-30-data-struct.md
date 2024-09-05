@@ -2,7 +2,7 @@
 layout:     post
 title:      "[今日算法] 经典的数据结构实现（js版）"
 subtitle:   ""
-author:     "wml"
+author:     "rex"
 header-img: "img/algorithm/bg.jpg"
 header-mask:  0.5
 catalog: true

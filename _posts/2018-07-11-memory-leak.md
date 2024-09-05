@@ -2,7 +2,7 @@
 layout:     post
 title:      "浅谈JavaScript内存泄露"
 subtitle:   ""
-author:     "wml"
+author:     "rex"
 header-img: "img/home-bg.jpg"
 header-mask:  0.5
 catalog: true

@@ -2,7 +2,7 @@
 layout:     post
 title:      "自己写的死亡递归，哭着也要改完"
 subtitle:   ""
-author:     "wml"
+author:     "rex"
 header-img: "img/hello-world.jpg"
 header-mask:  0.5
 catalog: true

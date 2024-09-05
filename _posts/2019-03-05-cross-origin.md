@@ -2,7 +2,7 @@
 layout:     post
 title:      "跨域的7种解决方案"
 subtitle:   ""
-author:     "wml"
+author:     "rex"
 header-img: "img/cross/1.jpg"
 header-mask:  0.5
 catalog: true
@@ -68,7 +68,7 @@ document.domain = 'b.com'; // error
 <script>
 var test = {
     "code": 0,
-    "name": "wml",
+    "name": "rex",
     "des": 'this page from pageA'
 }
 
@@ -191,7 +191,7 @@ app.get('/', function(req, res) {
   console.log(req.query, 77);
   res.send(`${req.query.callback}({
     "code": 0,
-    "name": "wml",
+    "name": "rex",
     "age": 26
   })`);
 });
@@ -210,7 +210,7 @@ jsonp接口与普通接口返回数据有区别，所以需要做jsonp数据兼�
 
 ### CORS
 
-CORS需要浏览器和后端同时支持，浏览器会自动进行CORS通信，服务端设置`Access-Control-Allow-Origin`可以开启CORS，表示哪些域名可以访问资源。CORS支持所有类型的http请求；虽然CORS和前端没什么关系，但是这种跨域方式会在发送请求时分为两种情况：
+CORS需要浏览器和后端同时支持，浏览器会自动进行CORS通信，服务端设置`Access-Control-Allow-Origin`可以开启CORS，表示哪些域名可以访问资源。CORS支持所有类型的http请求；虽然CORS和存储没什么关系，但是这种跨域方式会在发送请求时分为两种情况：
 
 1、简单请求
 
@@ -237,7 +237,7 @@ app.get('/', function(req, res) {
     res.setHeader('Access-Control-Allow-Origin', req.headers.origin);
     res.send({
       "code": 0,
-      "name": "wml",
+      "name": "rex",
       "age": 18
     });
   }
@@ -255,7 +255,7 @@ app.listen(4000, function() {
 //client.js
 let xhr = new XMLHttpRequest();
 xhr.open('PUT', 'http://localhost:4000/', true);
-xhr.setRequestHeader('name', 'wml');
+xhr.setRequestHeader('name', 'rex');
 xhr.onreadystatechange = function() {
   console.log(xhr.readyState, xhr.status, xhr.response);
 }
@@ -287,10 +287,10 @@ app.use(function(req, res, next) {
 })
 app.put('/', function(req, res) {
   console.log(req.headers, 88)
-  res.setHeader('name', 'wml2') //返回一个响应头，后台需设置
+  res.setHeader('name', 'rex2') //返回一个响应头，后台需设置
   res.end(`{
     "code": 0,
-    "name": "wml",
+    "name": "rex",
     "age": 18
   }`)
 });
@@ -378,7 +378,7 @@ server.listen(3000, function() {
 // server
 const http = require('http');
 const data = {
-  name: 'wml',
+  name: 'rex',
   age: 18
 }
 const server = http.createServer((request, response) => {
@@ -405,6 +405,6 @@ server {
 }
 ```
 
-### 相关源码：[github](https://github.com/wumeilian/crossDomain/tree/master/postMessage)
+### 相关源码：[github](https://github.com/rex/crossDomain/tree/master/postMessage)
 
 

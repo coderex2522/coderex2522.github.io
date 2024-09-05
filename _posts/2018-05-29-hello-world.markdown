@@ -1,8 +1,8 @@
 ---
 layout:     post
 title:      "Hello World"
-subtitle:   "Welcome to wml's blog"
-author:     "wml"
+subtitle:   "Welcome to rex's blog"
+author:     "rex"
 header-img: "img/hello-world.jpg"
 header-mask:  0.5
 catalog: true
@@ -12,7 +12,7 @@ tags:
 
 ## 写在前面
 
-Hello~ This is wml's blog, a new world that I'll record somethings.
+Hello~ This is rex's blog, a new world that I'll record somethings.
 
 emmmmm.... 装13完毕(〃'▽'〃)，一脸正经。。。(｀・ω・´)
 

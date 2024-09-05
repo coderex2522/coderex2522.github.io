@@ -2,7 +2,7 @@
 layout:     post
 title:      "【读书笔记】设计模式与继承"
 subtitle:   ""
-author:     "wml"
+author:     "rex"
 header-img: "img/bg-1.png"
 header-mask:  0.5
 catalog: true
@@ -30,15 +30,15 @@ value: 表示包含属性的数据值，默认undefined；
 
 // configurable
 var person = {
-  name: 'wml',
+  name: 'rex',
   age: 18
 };
-console.log(person.name); // wml
+console.log(person.name); // rex
 object.defineProperty(person, 'name', {
   configurable: false;
 });
 delete person.name;
-console.log(person.name); // wml
+console.log(person.name); // rex
 
 // enumberable(defienProperty为对象添加属性，默认对象的数据属性都为false)
 Object.defineProperty(person, 'sex', {
@@ -147,7 +147,7 @@ function createPerson(name, age, sex) {
   }
   return o;
 }
-let person1 = createPerson('wml', '18', 'female');
+let person1 = createPerson('rex', '18', 'female');
 let person2 = createPerson('w', '20', 'man');
 ```
 
@@ -174,7 +174,7 @@ function Person(name, age, sex) {
   }
 }
 
-let person1 = createPerson('wml', '18', 'female');
+let person1 = createPerson('rex', '18', 'female');
 person1.constructor == Person // true
 person1 instanceof Person // true
 ```
@@ -184,14 +184,14 @@ person1 instanceof Person // true
 
 ```js
 // 当作普通函数
-Person('wml', '18', 'female');
-window.sayName(); // wml
-window.name; // wml
+Person('rex', '18', 'female');
+window.sayName(); // rex
+window.name; // rex
 
 // 在另一个对象作用域中调用
 let o = new Object();
-Person.call(o, 'wml', '18', 'female');
-console.log(o); // {name: "wml", age: "18", sex: "female", sayName: ƒ}
+Person.call(o, 'rex', '18', 'female');
+console.log(o); // {name: "rex", age: "18", sex: "female", sayName: ƒ}
 o instanceof Person; //false
 ```
 
@@ -221,7 +221,7 @@ a.__proto__.__proto__ === A.prototype.__proto__ //true(都是指向原始对象O
 ```js
 // 原型模式
 function Person() {}
-Person.prototype.name = 'wml';
+Person.prototype.name = 'rex';
 Person.prototype.age = 18;
 Person.prototype.sayName = function() {
   console.log(this.name);
@@ -229,8 +229,8 @@ Person.prototype.sayName = function() {
 
 let person1 = new Person();
 let person2 = new Person();
-person1.name // wml
-person2.name // wml
+person1.name // rex
+person2.name // rex
 ```
 
 弊端： 不能用构造函数初始化传参，所有实例的属性和方法都是共享的。
@@ -250,8 +250,8 @@ Person.prototype = {
     console.log(this.name);
   }
 }
-let person1 = new Person('wml', 18);
-let person2 = new Person('wml2', 16);
+let person1 = new Person('rex', 18);
+let person2 = new Person('rex2', 16);
 person1.name === person2.age // false
 person1.sayName === person1.sayName //true
 ```
@@ -266,13 +266,13 @@ person1.sayName === person1.sayName //true
 
 ```js
 function A() {
-    this.namess = 'wml';
+    this.namess = 'rex';
 }
 A.prototype.getName = function() {
     return this.namess;
 }
 function SubA() {
-    this.subName = 'wml2';
+    this.subName = 'rex2';
 }
 SubA.prototype = new A();
 
@@ -284,22 +284,22 @@ let ins = new SubA();
 SubA.prototype.__proto__ === A.prototype // true
 ins.__proto__ === SubA.prototype // true
 ins.constructor === A // true（ins的构造函数原本指向SubA,但SubA的prototype指向了A的原型，A的原型的constructor指向A）
-ins.namess // wml
-ins.getName(); //wml
-ins.subName // wml2
-ins.getSubName(); // wml2
+ins.namess // rex
+ins.getName(); //rex
+ins.subName // rex2
+ins.getSubName(); // rex2
 
 // 重写超类型中的方法
-SubA.prototype.getName = function() {return 're_wml'} 
-ins.getName(); //re_wml
+SubA.prototype.getName = function() {return 're_rex'} 
+ins.getName(); //re_rex
 ```
 
 原型继承的缺点：超类型的原型属性会被所有实例共享(SubA的prototype指向了A的实例，A的原型属性变成了SubA的原型属性)；不能向超类型传参；
 
 ```js
-ins.namess = 'wml3';
+ins.namess = 'rex3';
 let ins2 = new SubA();
-ins2.namess // wml3
+ins2.namess // rex3
 ```
 
 #### 构造函数继承
@@ -315,14 +315,14 @@ function A(name) {
   this.namess = name;
 }
 function SubA() {
-  A.call(this, 'wml');
-  this.subName = 'wml2';
+  A.call(this, 'rex');
+  this.subName = 'rex2';
 }
 let ins = new SubA();
-ins.namess // wml
-ins.namess = 'wml3' // wml3
+ins.namess // rex
+ins.namess = 'rex3' // rex3
 let ins2 = new SubA()
-ins2.namess // wml
+ins2.namess // rex
 ```
 
 #### 组合继承
@@ -341,7 +341,7 @@ A.prototype.getName = function() {
 }
 function SubA(name) {
     A.call(this, name); //第二次调用A()
-    this.subName = 'wml2';
+    this.subName = 'rex2';
 }
 SubA.prototype = new A(); // 第一次调用A()
 SubA.prototype.constructor = SubA;
@@ -350,13 +350,13 @@ SubA.prototype.getSubName = function() {
     return this.subName;
 }
 
-let ins = new SubA('wml');
+let ins = new SubA('rex');
 ins.__proto__ === SubA.prototype // true
 ins.__proto__ === SubA.prototype // false
-ins.namess // wml
+ins.namess // rex
 ins.color.push(3) // [1,2,3]
-let ins2 = new SubA('wml3')
-ins2.namess // wml3
+let ins2 = new SubA('rex3')
+ins2.namess // rex3
 ins2.color //[1,2]
 ```
 
@@ -394,5 +394,5 @@ inheritPrototype(SubA, A);
 SubA.prototype.getSubName = function() {
   return this.subName;
 }
-let ins = new SubA('wml', 'wml2')
+let ins = new SubA('rex', 'rex2')
 ```

@@ -2,7 +2,7 @@
 layout:     post
 title:      "日常踩坑填坑"
 subtitle:   ""
-author:     "wml"
+author:     "rex"
 header-img: "img/present/1.jpg"
 header-mask:  0.5
 catalog: true

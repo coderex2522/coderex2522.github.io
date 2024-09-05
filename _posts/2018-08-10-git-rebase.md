@@ -2,7 +2,7 @@
 layout:     post
 title:      "git rebase"
 subtitle:   ""
-author:     "wml"
+author:     "rex"
 header-img: "img/bg-1.png"
 header-mask:  0.5
 catalog: true

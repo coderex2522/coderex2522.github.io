@@ -2,7 +2,7 @@
 layout:     post
 title:      "【学习笔记】 React的那些事儿"
 subtitle:   ""
-author:     "wml"
+author:     "rex"
 header-img: "img/home-bg.jpg"
 header-mask:  0.5
 catalog: true
@@ -29,7 +29,7 @@ React是Facebook开源的一个用于构建用户界面的Javascript库，已经
   });
 
   ReactDom.render(
-      <HelloMessage name="wml" />
+      <HelloMessage name="rex" />
       document.getElementById('example')
   );
   ```

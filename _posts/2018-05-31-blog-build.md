@@ -2,7 +2,7 @@
 layout:     post
 title:      "如何搭建jekyll主题的github.io博客"
 subtitle:   ""
-author:     "wml"
+author:     "rex"
 header-img: "img/bg-1.png"
 header-mask:  0.5
 catalog: true
@@ -18,11 +18,11 @@ tags:
 
 ### 1、 建立属于自己的github.io repository
 
-进入[我的仓库](https://github.com/wumeilian/wumeilian.github.io),点击右上角fork，将我的仓库拉到你自己的账号下; 再点击settings进入设置仓库名 ![fork](/img/blog/blog-build-3.png)
+进入[我的仓库](https://github.com/rex/rex.github.io),点击右上角fork，将我的仓库拉到你自己的账号下; 再点击settings进入设置仓库名 ![fork](/img/blog/blog-build-3.png)
 
 修改仓库名，仓库命名格式必须按照 `<username>.github.io`格式，将`username`替换成你自己的github账户名；![修改仓库名称](/img/blog/blog-build-4.png)
 
-修改完成后，往下拉到Github Pages的位置就能看到修改过后的地址(这里设置了自己的域名，未设置时地址`http://wumeilian.github.io`)
+修改完成后，往下拉到Github Pages的位置就能看到修改过后的地址(这里设置了自己的域名，未设置时地址`http://rex.github.io`)
 ![pages](/img/blog/blog-build-5.png)
 
 访问该地址就可以看到页面了，如果出现页面打不开，请检查仓库名是否和用户名一致。
@@ -127,4 +127,4 @@ Github Pages 可以更换自己的域名，关于域名购买以及解析，我�
 
 ## 写在最后
 
-关于github博客的搭建，由于各文件是后续一点点加上去的，所以还存在着许多不足，比如，对于图片的压缩，以及文件的自动压缩，还有博客评论等，都还没有添加，前期简单记录是足够了，还需要后面慢慢润色，最后，如果本文有帮助到你的话，进入[我的仓库](https://github.com/wumeilian/wumeilian.github.io)帮忙点个star吧~比熏熏٩(๑❛ᴗ❛๑)۶。
+关于github博客的搭建，由于各文件是后续一点点加上去的，所以还存在着许多不足，比如，对于图片的压缩，以及文件的自动压缩，还有博客评论等，都还没有添加，前期简单记录是足够了，还需要后面慢慢润色，最后，如果本文有帮助到你的话，进入[我的仓库](https://github.com/rex/rex.github.io)帮忙点个star吧~比熏熏٩(๑❛ᴗ❛๑)۶。
