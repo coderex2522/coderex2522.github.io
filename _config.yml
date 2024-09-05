@@ -50,7 +50,7 @@ gitalk:
 
 
 # Favorites
-Favorites: [
+favorites: [
   {
     title: "Tesla",
     href: "https://www.tesla.com/"
