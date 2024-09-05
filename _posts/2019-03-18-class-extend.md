@@ -2,7 +2,7 @@
 layout:     post
 title:      "关于es6类里的super方法和get set方法"
 subtitle:   ""
-author:     "wml"
+author:     "rex"
 header-img: "img/present/1.jpg"
 header-mask:  0.5
 catalog: true
@@ -47,9 +47,9 @@ class SubEsc extends Esc {
   }
 }
 
-let subesc = new SubEsc(1, 'xm', 'wml')
+let subesc = new SubEsc(1, 'xm', 'rex')
 ```
 
-> * 每个实例对象（object）都有一个私有属性（__proto__）指向它的原型对象(prototype)，层层向上，直到一个对象的原型对象为null,null没有原型，被称为原型链的最后一环。下图可以看出上面subesc实例的原型链是`{id: 1; instance: "wml";name: "wml";region: "xm"}  --> SubEsc.prototype --> Esc.prototype --> Object.prototype --> null`.
+> * 每个实例对象（object）都有一个私有属性（__proto__）指向它的原型对象(prototype)，层层向上，直到一个对象的原型对象为null,null没有原型，被称为原型链的最后一环。下图可以看出上面subesc实例的原型链是`{id: 1; instance: "rex";name: "rex";region: "xm"}  --> SubEsc.prototype --> Esc.prototype --> Object.prototype --> null`.
 
 ![present](/img/present/2.jpg)

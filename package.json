@@ -1,5 +1,5 @@
 {
-  "name": "wumeilian.github.io",
+  "name": "rex.github.io",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -8,15 +8,15 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/wumeilian/wumeilian.github.io.git"
+    "url": "git+https://github.com/rex/rex.github.io.git"
   },
   "keywords": [
     "blog"
   ],
-  "author": "wml",
+  "author": "rex",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/wumeilian/wumeilian.github.io/issues"
+    "url": "https://github.com/rex/rex.github.io/issues"
   },
-  "homepage": "https://github.com/wumeilian/wumeilian.github.io#readme"
+  "homepage": "https://github.com/rex/rex.github.io#readme"
 }

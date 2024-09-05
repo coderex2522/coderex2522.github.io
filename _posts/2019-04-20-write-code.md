@@ -1,8 +1,8 @@
 ---
 layout:     post
-title:      "搞定前端手写"
+title:      "搞定存储手写"
 subtitle:   ""
-author:     "wml"
+author:     "rex"
 header-img: "img/bg-1.png"
 header-mask:  0.5
 catalog: true
@@ -15,7 +15,7 @@ tags:
 call()接受的是一个参数列表
 
 ```js
-let obj = {name: 'wml'};
+let obj = {name: 'rex'};
 function foo(age, sex) {
   return {
     name: this.name,
@@ -36,7 +36,7 @@ Function.prototype.myCall = function() {
   return result;
 }
 
-foo.myCall(obj, 18, 'girl'); // {name: "wml", age: 18, sex: "girl"}
+foo.myCall(obj, 18, 'girl'); // {name: "rex", age: 18, sex: "girl"}
 ```
 
 #### 2、手写apply
@@ -56,7 +56,7 @@ Function.prototype.myApply = function() {
   return result;
 }
 
-foo.myApply(obj, [18, 'girl']); // {name: "wml", age: 18, sex: "girl"}
+foo.myApply(obj, [18, 'girl']); // {name: "rex", age: 18, sex: "girl"}
 ```
 
 #### 3、手写bind
@@ -75,8 +75,8 @@ Function.prototype.myBind = function() {
   }
   return reslut;
 }
-foo.myBind(obj, 18, 'girl')(); // {name: "wml", age: 18, sex: "girl"}
-foo.myBind(obj)(18, 'girl'); // {name: "wml", age: 18, sex: "girl"}
+foo.myBind(obj, 18, 'girl')(); // {name: "rex", age: 18, sex: "girl"}
+foo.myBind(obj)(18, 'girl'); // {name: "rex", age: 18, sex: "girl"}
 ```
 
 

@@ -2,7 +2,7 @@
 layout:     post
 title:      "【学习笔记】 webpack"
 subtitle:   ""
-author:     "wml"
+author:     "rex"
 header-img: "img/bg-1.png"
 header-mask:  0.5
 catalog: true

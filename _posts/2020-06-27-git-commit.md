@@ -2,7 +2,7 @@
 layout:     post
 title:      "团队开发时应该要遵守的git提交规范"
 subtitle:   ""
-author:     "wml"
+author:     "rex"
 header-img: "img/bg-1.png"
 header-mask:  0.5
 catalog: true
@@ -91,8 +91,8 @@ chore(wepack): 增加webpack文件分析插件
 
 ### git bash密码更新
 
-git config --global user.name "wml(新的用户名)"
+git config --global user.name "rex(新的用户名)"
 
-git config --global user.email "wml@qq.com(新的邮箱)"
+git config --global user.email "rex@qq.com(新的邮箱)"
 
 git config --global user.password "123456(新的密码)
