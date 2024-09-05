@@ -49,8 +49,8 @@ gitalk:
   # distractionFreeMode: true #是否启用类似FB的阴影遮罩
 
 
-# Favorite
-Favorite: [
+# Favorites
+Favorites: [
   {
     title: "Tesla",
     href: "https://www.tesla.com/"
