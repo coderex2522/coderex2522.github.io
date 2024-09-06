@@ -2,10 +2,10 @@
 
 # Site settings
 title: Rex Blog
-SEOTitle: 张鑫的博客 | Rex Blog
+SEOTitle: Rex Blog
 header-img: img/home-bg.png
 email: rex6817@gmail.com
-description: "存储开发 | Storage Engineer | Rex的个人博客呀"
+description: "存储开发 | Storage Engineer | Rex的个人博客"
 keyword: "Rex, 存储, Rex Blog"
 url: "https://coderex2522.github.io/"              # your host, for absolute URL
 baseurl: ""                             # for example, '/blog' if your blog hosted on 'host/blog'
@@ -42,7 +42,7 @@ plugins: [jekyll-paginate]
 
 # Gitalk
 gitalk:
-  enable: true    #是否开启Gitalk评论
+  enable: false    #是否开启Gitalk评论
   repo: coderex2522.github.io    #仓库名称
   owner: coderex2522    #github用户名
   admin: coderex2522
