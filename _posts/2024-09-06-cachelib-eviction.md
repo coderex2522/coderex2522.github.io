@@ -36,6 +36,6 @@ CacheLib 采用的是 `带可选配置` 的 LRU算法，以下是涉及的特定
   - 参数的默认值：updateOnRead = true and updateOnWrite = false.
 
 - `ipSpec` This essentially turns the LRU into a two-segmented LRU(参数将LRU分成两段LRU). Setting this to 1 means every new insertion will be inserted 1/2 from the end of the LRU, 2 means 1/4 from the end of the LRU, and so on.
-  - value = 0，即在LRU head位置插入新item
+  - value = 0, 即在LRU head位置插入新item
   - value = 1, 插入位置为LRU tail的1/2位置
   - value = 2, 插入位置为LRU tail的1/4位置
