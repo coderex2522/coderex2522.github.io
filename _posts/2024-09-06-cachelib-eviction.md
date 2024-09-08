@@ -26,7 +26,7 @@ CacheLib 采用的是 `带可选配置` 的 LRU算法，以下是涉及的特定
 2. `promotion delay`: 将访问命中的item移到head的延迟. Normally every access item is moved to the LRU head. In fact, you need to be precise about promotions from the tail of LRU and don't bother(无须费心) promoting items close to the head. Before promotion, we check the time since the last promotion and promote only if it is longer than the delay parameter `T`. This is `performance optimization`. In the setup of the last example, you may want to promote only items with tail age of 300s, roughly when they get to the bottom half of the LRU.
     - 核心的点：对于靠近list head的item，无需对该item进行promotion，优化访问的性能
 
-### Configuration
+#### Configuration
 - `lruRefreshTime`: How often does cachelib refresh a previously accessed item. By default this is 60 seconds.
   - 先前访问过的item多久刷新一次，默认值为60s
 
@@ -39,3 +39,12 @@ CacheLib 采用的是 `带可选配置` 的 LRU算法，以下是涉及的特定
   - value = 0, 即在LRU head位置插入新item
   - value = 1, 插入位置为LRU tail的1/2位置
   - value = 2, 插入位置为LRU tail的1/4位置
+
+
+# LRU 2Q
+LRU2Q 是 LRU 的一个变体，主要用来解决`bursty access pattern` 突发访问
+![1](/img/cachelib/lru2q.png)
+LRU2Q 的名字存在误导，实际上存在三个队列
+- hot lru queue: 新增加的item放置在这个队列. item被踢出之后会先放置在cold lru queue.
+- warm lru queue: cold lru queue中命中的item会被promote到这个队列. item被踢出之后会放置在cold lru queue.
+- cold lru queue: 被cold lru queue踢出的item会从cache中清除.
