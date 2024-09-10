@@ -25,8 +25,10 @@ tags:
 
 > This paper presents a different approach to cache development, successfully employed at Facebook, which extracts a core set of common requirements and functionality from otherwise disjoint caching systems. CacheLib is a generalpurpose caching engine, designed based on experiences with a range of caching use cases at Facebook, that facilitates the easy development and maintenance of caches. CacheLib was first deployed at Facebook in 2017 and today powers over 70 services including CDN, storage, and application-data caches. This paper describes our experiences during the transition from independent, specialized caches to the widespread adoption of CacheLib. We explain how the characteristics of production workloads and use cases at Facebook drove important design decisions. We describe how caches at Facebook have evolved over time, including the significant benefits seen from deploying CacheLib. We also discuss the implications our experiences have for future caching design and research.
 
-* 论文呈现了一个新的缓存系统设计，成功应用在Facebook上，该系统将`提取`出`通用`的`需求和功能`，并将其应用到`不同`的`缓存系统`中。
-* CacheLib 是一个通用的缓存引擎，基于Facebook的`大量的缓存使用case`
+* 论文提出一个不同的缓存开发方法，成功应用在Facebook上，它从不同的缓存系统中`提取`出`通用的需求和功能`
+* CacheLib 是一个通用的缓存引擎，基于Facebook的`大量的缓存使用case的经验`而设计
+* 本文描述了从独立、专业的缓存过渡到CacheLib广泛应用过程中的经验。
+* 我们解释了Facebook的生产工作负载和用例特征如何影响了重要的设计决策。
 
 # 4. Design and Implementation
 > CacheLib enables the construction of fast, stable caches for a broad set of use cases. To address common challenges across these use cases as described in Sections 2 and 3, we identify `the following features` as necessary requirements for a `generalpurpose` caching engine.   
@@ -71,19 +73,25 @@ tags:
 * 只有 Item 的引用计数为0时，Item 才可以被驱逐
 * 如果Item引用计数不为0但是已经expired或者deleted，Item将不会被驱逐，ItemHandle仍然有效，但是`不能为Item创建新的ItemHandle`
 
-> Figure 7 shows the basic CacheLib API. To insert a new object into the cache, allocate may first evict another Item (according to an eviction policy) as long as there are no outstanding ItemHandles that reference it. The new Item can be configured with an expiration time (TTL). It is created within the given memory “pool” (see below), which can be individually configured to provide strong isolation guarantees. Any new Items only become visible after an insertOrReplace operation completes on a corresponding ItemHandle. To access cached Items, find creates an ItemHandle from a key, after which getMemory allows unsynchronized, zero-copy access to the memory associated with an Item. To atomically update an Item, one would allocate a new ItemHandle for the key they wish to update, perform the update using getMemory, and then make the update visible calling insertOrReplace with the new ItemHandle. Because CacheLib clients access raw memory for performance, CacheLib trusts users to faithfully indicate any mutations using the method markNvmUnclean. Finally, remove deletes the Item identified by a key, indicating invalidation or deletion of the underlying object.
+> Figure 7 shows the basic CacheLib API. To insert a new object into the cache, allocate may first evict another Item (according to an eviction policy) as long as there are no outstanding ItemHandles that reference it. The new Item can be configured with an expiration time (TTL). It is created within the given memory “pool” (see below), which can be individually configured to provide strong isolation guarantees. Any new Items only become visible after an insertOrReplace operation completes on a corresponding ItemHandle. To access cached Items, find creates an ItemHandle from a key, after which getMemory allows `unsynchronized`(非同步化), zero-copy access to the memory associated with an Item. To atomically update an Item, one would allocate a new ItemHandle for the key they wish to update, perform the update using getMemory, and then make the update visible calling insertOrReplace with the new ItemHandle. Because CacheLib clients access raw memory for performance, CacheLib trusts users to faithfully indicate any mutations using the method markNvmUnclean. Finally, remove deletes the Item identified by a key, indicating invalidation or deletion of the underlying object.
 
-* `insertOrReplace`操作会先驱逐另一个Item，如果Item的引用计数不为0，那么ItemHandle将不会被驱逐，ItemHandle仍然有效，但是不能为Item创建新的ItemHandle
-* `find`操作会创建一个ItemHandle，通过`getMemory`方法可以获取Item的底层内存，通过`markNvmUnclean`方法可以标记Item的底层内存是否被修改
-* `remove`操作会删除Item，通过`markNvmUnclean`方法可以标记Item的底层内存是否被修改
-* `markNvmUnclean`方法可以标记Item的底层内存是否被修改
-* `remove`操作会删除Item，通过`markNvmUnclean`方法可以标记Item的底层内存是否被修改
+![1](/img/cachelib/figure7.png)
+
+* 为了插入一个Item到cache，`allocate`方法首先可能会根据eviction policy淘汰一个其他的item(没有outstanding itemhandles引用这个item).
+* new item 可以配置TTL，new item可以创建在给定的memory pool中，可以单独配置来提供强隔离保证
+* new item 只有在相应的ItemHandle完成 `insertOrReplace`操作之后，才会变得`可见`
+* `find`操作会根据key创建一个ItemHandle，通过`getMemory`方法允许对Item进行`unsynchronized`(非同步化，无锁)的零拷贝访问
+* 为了原子性地更新Item，需要先为想要更新的key创建一个ItemHandle，通过`getMemory`方法对Item进行更新，然后调用`insertOrReplace`方法来使更新变得可见
+* 由于 CacheLib 客户端直接访问原始内存以提高性能，CacheLib 信任用户准确地使用 `markNvmUnclean` 方法指示`任何变更`
+* `remove`操作根据keyl来删除Item，来表示对基础对象的失效或者删除
 
 > Figure 8 shows a simple example of CacheLib’s native support for structured data. Structured Items are accessed through a TypedHandle, which offers the same methods as an ItemHandle. TypedHandles enable low-overhead access to user-defined data structures which can be cached and evicted just like normal Items. In addition to statically sized data structures, CacheLib also supports variably-sized data structures; for example, CacheLib implements a simple hashmap that supports range queries, arrays, and iterable buffers.
 
+![1](/img/cachelib/figure8.png)
+
 * CacheLib 支持结构化数据的原生实现，通过`TypedHandle`可以访问结构化数据
 * TypedHandle 提供了与ItemHandle相同的方法
-* CacheLib 支持可变大小的结构化数据，例如，CacheLib实现了一个简单的hashmap，支持范围查询，数组，可迭代缓冲区
+* CacheLib 支持可变大小的结构化数据，例如，CacheLib实现了一个简单的hashmap(支持范围查询)，数组 和 可迭代缓冲区
 
 > CacheLib implements these APIs in C++, with binding to other languages such as Rust.
 
