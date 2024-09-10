@@ -27,7 +27,6 @@ tags:
 
 * 论文呈现了一个新的缓存系统设计，成功应用在Facebook上，该系统将`提取`出`通用`的`需求和功能`，并将其应用到`不同`的`缓存系统`中。
 * CacheLib 是一个通用的缓存引擎，基于Facebook的`大量的缓存使用case`
-* 阐述生产负载
 
 # 4. Design and Implementation
 > CacheLib enables the construction of fast, stable caches for a broad set of use cases. To address common challenges across these use cases as described in Sections 2 and 3, we identify `the following features` as necessary requirements for a `generalpurpose` caching engine.   
@@ -61,10 +60,32 @@ tags:
 ## 4.1. CacheLib API
 > The CacheLib API is designed to be simple enough to allow application programmers to quickly build in-process caching layers with little need for cache tuning and configuration. At the same time, CacheLib must scale to support complex application-level consistency protocols, as well as zero-copy access to data for high performance. Choosing an API which is both simple and powerful was an important concern in the design of CacheLib. 
 
-* CacheLib 提供简单的API，方便上层应用快速构建`in-process caching layers`
-* CacheLib 支持复杂的`应用级一致性协议`，以及`零拷贝的访问`
+* CacheLib 提供简单的API，方便上层应用快速构建`in-process caching layers`, 并且不需要缓存调优和配置
+* CacheLib 具备可扩展性，支持复杂的`应用级一致性协议`，以及`零拷贝的访问`
+* CacheLib设计过程中一个重要的考虑因素是`简单和强大`的API
 
-> The API centers around the concept of an Item, an abstract representation of a cached object. The Item enables byte-addressable access to an underlying object, independent of whether the object is stored in DRAM or flash. Access to cached Items is controlled via an ItemHandle which enables reference counting for cached Items. When an ItemHandle object is constructed or destroyed, a reference counter for the corresponding Item is incremented or decremented, respectively. An Item cannot be evicted from the cache unless its reference count is 0. If an Item with a non-zero reference count expires or is deleted, existing ItemHandles will remain valid, but no new ItemHandles will be issued for the Item. Figure 7 shows the basic CacheLib API. To insert a new object into the cache, allocate may first evict another Item (according to an eviction policy) as long as there are no outstanding ItemHandles that reference it. The new Item can be configured with an expiration time (TTL). It is created within the given memory “pool” (see below), which can be individually configured to provide strong isolation guarantees. Any new Items only become visible after an insertOrReplace operation completes on a corresponding ItemHandle. To access cached Items, find creates an ItemHandle from a key, after which getMemory allows unsynchronized, zero-copy access to the memory associated with an Item. To atomically update an Item, one would allocate a new ItemHandle for the key they wish to update, perform the update using getMemory, and then make the update visible calling insertOrReplace with the new ItemHandle. Because CacheLib clients access raw memory for performance, CacheLib trusts users to faithfully indicate any mutations using the method markNvmUnclean. Finally, remove deletes the Item identified by a key, indicating invalidation or deletion of the underlying object. Figure 8 shows a simple example of CacheLib’s native support for structured data. Structured Items are accessed through a TypedHandle, which offers the same methods as an ItemHandle. TypedHandles enable low-overhead access to user-defined data structures which can be cached and evicted just like normal Items. In addition to statically sized data structures, CacheLib also supports variably-sized data structures; for example, CacheLib implements a simple hashmap that supports range queries, arrays, and iterable buffers. CacheLib implements these APIs in C++, with binding to other languages such as Rust.
+> The API centers around the concept of an Item, an abstract representation of a cached object. The Item enables byte-addressable access to an underlying object, independent of whether the object is stored in DRAM or flash. Access to cached Items is controlled via an ItemHandle which enables reference counting for cached Items. When an ItemHandle object is constructed or destroyed, a reference counter for the corresponding Item is incremented or decremented, respectively. An Item cannot be evicted from the cache unless its reference count is 0. If an Item with a non-zero reference count expires or is deleted, existing ItemHandles will remain valid, but no new ItemHandles will be issued for the Item.
+
+* Item 是Cache Object抽象表示，Item 封装了底层对象，支持 `Byte-Addressable`, 与底层存储介质无关
+* Item 通过ItemHandle 控制访问，ItemHandle 支持引用计数
+* 只有 Item 的引用计数为0时，Item 才可以被驱逐
+* 如果Item引用计数不为0但是已经expired或者deleted，Item将不会被驱逐，ItemHandle仍然有效，但是`不能为Item创建新的ItemHandle`
+
+> Figure 7 shows the basic CacheLib API. To insert a new object into the cache, allocate may first evict another Item (according to an eviction policy) as long as there are no outstanding ItemHandles that reference it. The new Item can be configured with an expiration time (TTL). It is created within the given memory “pool” (see below), which can be individually configured to provide strong isolation guarantees. Any new Items only become visible after an insertOrReplace operation completes on a corresponding ItemHandle. To access cached Items, find creates an ItemHandle from a key, after which getMemory allows unsynchronized, zero-copy access to the memory associated with an Item. To atomically update an Item, one would allocate a new ItemHandle for the key they wish to update, perform the update using getMemory, and then make the update visible calling insertOrReplace with the new ItemHandle. Because CacheLib clients access raw memory for performance, CacheLib trusts users to faithfully indicate any mutations using the method markNvmUnclean. Finally, remove deletes the Item identified by a key, indicating invalidation or deletion of the underlying object.
+
+* `insertOrReplace`操作会先驱逐另一个Item，如果Item的引用计数不为0，那么ItemHandle将不会被驱逐，ItemHandle仍然有效，但是不能为Item创建新的ItemHandle
+* `find`操作会创建一个ItemHandle，通过`getMemory`方法可以获取Item的底层内存，通过`markNvmUnclean`方法可以标记Item的底层内存是否被修改
+* `remove`操作会删除Item，通过`markNvmUnclean`方法可以标记Item的底层内存是否被修改
+* `markNvmUnclean`方法可以标记Item的底层内存是否被修改
+* `remove`操作会删除Item，通过`markNvmUnclean`方法可以标记Item的底层内存是否被修改
+
+> Figure 8 shows a simple example of CacheLib’s native support for structured data. Structured Items are accessed through a TypedHandle, which offers the same methods as an ItemHandle. TypedHandles enable low-overhead access to user-defined data structures which can be cached and evicted just like normal Items. In addition to statically sized data structures, CacheLib also supports variably-sized data structures; for example, CacheLib implements a simple hashmap that supports range queries, arrays, and iterable buffers.
+
+* CacheLib 支持结构化数据的原生实现，通过`TypedHandle`可以访问结构化数据
+* TypedHandle 提供了与ItemHandle相同的方法
+* CacheLib 支持可变大小的结构化数据，例如，CacheLib实现了一个简单的hashmap，支持范围查询，数组，可迭代缓冲区
+
+> CacheLib implements these APIs in C++, with binding to other languages such as Rust.
 
 ## 4.2 Architecture Overview
 > CacheLib is designed to be scalable enough to accommodate massive working sets (Section 3.1) with highly variable sizes (Section 3.2). To achieve low per-object overhead, a single CacheLib cache is composed of several subsystems, each of which is `tailored to`(针对,为...量身定制) a particular storage medium and object size. Specifically, CacheLib consists of a DRAM cache and a flash cache. The flash cache is composed of two caches: the Large Object Cache (LOC) for Items>=2KB in size and Small Object Cache (SOC) for Items <2KB in size.
@@ -181,12 +202,25 @@ tags:
   * CacheLib支持固定大小的对象数组，`无需为每个entry添加额外的开销`
   * Map类型支持可变对象大小，并支持有序和无序变体。Map的每个entry的开销为4B，用于存储其大小。
 
-> `Caching large and small objects in DRAM`. To store objects larger than 4MB in size, CacheLib chains multiple DRAM Items together into one logical large item. This chaining requires an additional 4B next pointer per object in the chain. The most common use case for large objects is the storage of structured items. While it is uncommon for a single, logical object to be larger than 4MB, we frequently see Arrays or Maps that comprise more than 4MB in aggregate. CacheLib also features compact caches, DRAM caches designed to cache objects smaller than a cache line (typically 64B or 128B). Compact caches store objects with the same key size and object size in a single cache line [18, 29, 46, 80]. Compact caches are set-associative caches, where each cache line is a set which is indexed by a key’s hash. LRU eviction is done within each set by repositioning objects within a cache line. Compact caches have no per-object overhead. One prominent example of using compact caches is Cache- Lib’s support for negative caching. Negative cache objects indicate that a backend query has previously returned an empty result. Negative cache objects are small, fixed-size objects which only require storing a key to identify the empty query. As discussed in Section 3.5, negative caching improves hit ratios drastically in SocialGraph. Negative caching is not used by Lookaside, Storage, or CDN, but it is employed by 4 of the 10 largest CacheLib-based systems. Both of these features reinforce CacheLib’s overarching design, which is to provide specialized solutions for objects of different sizes in order to keep per-object overheads low.
+> `Caching large and small objects in DRAM`. To store objects larger than 4MB in size, CacheLib chains multiple DRAM Items together into one logical large item. This chaining requires an additional 4B next pointer per object in the chain. The most common use case for large objects is the storage of structured items. While it is uncommon for a single, logical object to be larger than 4MB, we frequently see Arrays or Maps that comprise more than 4MB in aggregate. CacheLib also features compact caches, DRAM caches designed to cache objects smaller than a cache line (typically 64B or 128B). Compact caches store objects with the same key size and object size in a single cache line [18, 29, 46, 80]. Compact caches are `set-associative`(集合关联) caches, where each cache line is a set which is indexed by a key’s hash. LRU eviction is done within each set by repositioning objects within a cache line. Compact caches have no per-object overhead. One prominent example of using compact caches is CacheLib’s support for negative caching. Negative cache objects indicate that a backend query has previously returned an empty result. Negative cache objects are small, fixed-size objects which only require storing a key to identify the empty query. As discussed in Section 3.5, negative caching improves hit ratios drastically in SocialGraph. Negative caching is not used by Lookaside, Storage, or CDN, but it is employed by 4 of the 10 largest CacheLib-based systems. Both of these features reinforce CacheLib’s `overarching`(首要的) design, which is to provide specialized solutions for objects of different sizes in order to keep per-object overheads low.
 
+* CacheLib 允许缓存大于4MB的对象，将多个DRAM Item链接在一起，形成一个逻辑大对象。这需要每个对象链中的附加4B的next指针
+* 对于large objects而言，常用的应用场景是存储结构化对象。虽然单个逻辑对象通常不会超过4MB，但通常会看到包含超过4MB的对象的`数组或MAP`
+* CacheLib 具备`compact caches`，它是设计用于缓存小于缓存行（通常为 64B 或 128B）对象的 DRAM 缓存.
+  * compact caches 存储将具有相同键大小和对象大小的对象在一个缓存行中，通常为 64B 或 128B
+  * compact caches 是`集合关联`的缓存，其中每个缓存行都是一个索引的集合，由对象的哈希值索引
+  * 每个缓存行是一个被键的哈希索引的集合。LRU eviction在每个集合内通过重新定位缓存行内的对象来实现。compact caches 对于item没有额外开销
+* 10个基于CacheLib的系统中有4个应用都使用了 Negative cache
 
 
 > `Dynamic resource usage and monitoring`. CacheLib monitors the total system memory usage and continuously adapts the DRAM cache size to stay below a specified bound. CacheLib exposes several parameters to control the memory usage mechanism. If the system free memory drops below lowerLimitGB bytes, CacheLib will iteratively free percentPerIteration percent of the difference between upperLimitGB and lowerLimitGB until system free memory rises above upperLimitGB. A maximum of maxLimitPercent of total cache size can be freed by this process, preventing the cache from becoming too small. Although freeing memory may cause evictions, this feature is designed to prevent outright crashes which are far worse for cache hit ratios (see Figure 15). As system free memory increases, CacheLib reclaims memory by an analogous process.
 
-
+* CacheLib 监控了系统内存使用情况，并持续调整 DRAM 缓存的大小，以保持在指定的边界以下
+* CacheLib 提供了 几种参数 来控制`内存使用机制`
+  * 
 
 > `Warm restarts`. CacheLib implements warm restarts by allocating DRAM cache space using POSIX shared memory [76]. This allows a cache to shut down while leaving its cache state in shared memory. A new cache can then take ownership of the cache state on start up. The DRAM cache keeps its index permanently in shared memory by default. All other DRAM cache state is serialized into shared memory during shutdown. The LOC B-tree index and SOC Bloom filters are serialized and written in a dedicated section on flash during shutdown.
+
+* CacheLib 通过使用POSIX共享内存来实现`Warm restarts`
+* 
+
