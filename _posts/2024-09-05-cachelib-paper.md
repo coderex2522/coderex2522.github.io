@@ -186,13 +186,47 @@ tags:
 
 * Large Object Cache (LOC) 用于在flash中存储大于2KB的object. 因为LOC object 大于2KB，所以LOC中object的数量在百万以内，因此可以构建一个DRAM内存中的索引, 用来映射item在Flash中的地址
 * Item 在flash中以4KB对齐的方式存储，所以flash地址是一个4B的4KB对齐地址
-* 允许LOC索引`16TB`的flash存储空间
+* 4B = 2^32次方， 允许LOC索引`16TB`(2^32 * 4KB)的flash存储空间
 
 > The LOC uses flash to further limit the size of the DRAM index. Keys are hashed to 8B. The first 4B identify the B+- tree segment, and the second 4B are used as a key within in a tree segment to lookup a flash location. A hash collision in the DRAM index will cause CacheLib to believe it has found an object’s flash location. Hence, LOC stores a copy of each object’s full key on flash as part of the object metadata and validates the key after the object is fetched off flash. Each flash device is partitioned into regions which each store objects of a different size range. Hence, the object size can be inferred from where it is located on flash, without explicitly storing object sizes in DRAM. CacheLib can then retrieve the object via a single flash read for the correct number of bytes. To reduce the size of addresses stored in DRAM, every 4KB flash page stores at most a single object and its metadata. This is spaceefficient because LOC only stores objects larger than 2KB. Objects larger than 4KB can span multiple pages. Because the LOC reads and writes at the page level, any fragmentation also causes application-level write amplification.
 
+* LOC使用flash可以进一步限制DRAM索引的大小
+* keys 被hash到8B, 第一个4B标识B+-树段，第二个4B用于在树段中查找flash地址
+* hash碰撞会导致CacheLib认为找到了object的flash地址, 因此LOC会在flash中存储object的完整key, 作为object metadata的一部分. 并在从flash中提取对象后验证键的值
+* 每个flash设备被划分成多个region，每个region存储不同大小范围的对象，因此object size可以根据object在flash中的位置推断出来，而不需要显式存储将object sizes存储在DRAM中？怎么推断出来？
+* CacheLib随后可以通过`一次闪存读取`以正确的字节数检索对象
+* 为了减少存储在DRAM中的地址大小，每个4KB闪存页面最多存储一个对象及其元数据。 
+* 这是空间高效的，因为LOC仅存储大于2KB的对象。大于4KB的对象可能跨越多个页。
+* LOC读取和写入以页为单位，因此任何碎片也导致应用级写放大
 
-> To amortize the computational cost of flash erasures, the LOC’s caching policy evicts entire regions rather than individual objects. (Region size is configurable, e.g., 16MB.) By default, FIFO is used so that regions are erased in strictly sequential order [60]. Writing sequentially improves the performance of the flash translation layer and greatly reduces device-level write amplification (see Section 5.2). If FIFO eviction evicts a popular object, it may be readmitted to the cache [86]. Alternatively, LOC supports a pseudo-LRU policy which tracks recency at region granularity. A request for any object in a region logically resets the region to the MRU position. Evictions erase the entire region at the LRU position. The Small Object Cache (SOC) is used to store objects smaller than 2KB on flash. Because billions of small objects can fit on a single 1TB flash device, an exact lookup index (with associated per-object metadata) would use an unreasonably large amount of DRAM [32]. Hence, SOC uses an approximate index that scales with the number of flash pages. SOC hashes keys into sets.Each set identifies a 4KB flash page which is used to store multiple objects. Objects are evicted from sets in FIFO order. A naive implementation of this design would always read a set’s page off flash to determine whether it contains a particular object. As an optimization, CacheLib maintains an 8B Bloom filter in DRAM for each set, each with 4 probes. This filter contains the keys stored on the set’s flash page and prevents unnecessary reads more than 90% of the time [11, 12]. Figure 10 shows the alloc path, and Figure 11 shows the find path. Controlling write amplification in the SOC is particularly challenging. Admitting an object to the SOC requires writing an entire 4KB flash page, and is thus a significant source of application-level write amplification. This also applies to the remove operation, which removes an object from flash. Similarly, because keys are hashed to sets, admitting a stream of objects to the SOC causes random writes that result in higher device-level write amplification. Furthermore, the SOC only supports eviction policies that do not require state updates on hits, such as FIFO, since updating a set on a hit would require a 4KB page write. These challenges highlight the importance of advanced admission policies (see Section 5.2).
+> To amortize the computational cost of flash erasures, the LOC’s caching policy evicts entire regions rather than individual objects. (Region size is configurable, e.g., 16MB.) By default, FIFO is used so that regions are erased in strictly sequential order [60]. Writing sequentially improves the performance of the flash translation layer and greatly reduces device-level write amplification (see Section 5.2). If FIFO eviction evicts a popular object, it may be readmitted to the cache [86]. Alternatively, LOC supports a `pseudo-LRU`(伪LRU) policy which tracks recency at region granularity. A request for any object in a region logically resets the region to the MRU position. Evictions erase the entire region at the LRU position.
 
+* 为了摊销闪存擦除的计算成本，LOC的缓存策略会驱逐整个region，而不是单个对象。
+* 默认情况下，使用FIFO策略，以确保以严格顺序擦除区域。 
+* 顺序写入提高了闪存翻译层的性能，并大大减少了设备级的写放大（见第5.2节）。
+* 如果FIFO清除了一件热门对象，则该对象可以重新加入缓存。
+* 或者，LOC支持伪LRU策略，以区域为粒度跟踪最近使用情况。对区域中任何对象的请求在逻辑上将区域重置为MRU位置。清除操作会擦除位于LRU位置的整个区域。
+
+> The `Small Object Cache (SOC)` is used to store objects smaller than 2KB on flash. Because billions of small objects can fit on a single 1TB flash device, an exact lookup index (with associated per-object metadata) would use an unreasonably large amount of DRAM [32]. Hence, SOC uses an approximate index that scales with the number of flash pages.
+
+* Small Object Cache (SOC) 用于在flash中存储小于2KB的object. (按一个object 1KB 计算，1TB flash可以存储10亿个object)
+* 如果对SOC构建一个精确的索引，会占用大量的DRAM，因此SOC使用一个近似的索引，这个索引会根据flash page的数量来缩放
+
+> SOC hashes keys into sets.Each set identifies a 4KB flash page which is used to store multiple objects. Objects are evicted from sets in FIFO order. A naive implementation of this design would always read a set’s page off flash to determine whether it contains a particular object. As an optimization, CacheLib maintains an 8B Bloom filter in DRAM for each set, each with 4 probes. This filter contains the keys stored on the set’s flash page and prevents unnecessary reads more than 90% of the time [11, 12]. Figure 10 shows the alloc path, and Figure 11 shows the find path. 
+
+![1](/img/cachelib/figure10.png)
+
+* soc使用hash将key映射到多个集合，每个集合对应一个4KB的flash page，集合中的对象会按照FIFO顺序被移除
+* 作为一种优化，cachelib为每一个集合在DRAM中维护一个8B的Bloom filter
+* Bloom filter过滤器包含集合中的所有key，可以减少90%的读请求
+
+> Controlling write amplification in the SOC is particularly challenging. Admitting an object to the SOC requires writing an entire 4KB flash page, and is thus a significant source of application-level write amplification. This also applies to the remove operation, which removes an object from flash. Similarly, because keys are hashed to sets, admitting a stream of objects to the SOC causes random writes that result in higher device-level write amplification. Furthermore, the SOC only supports eviction policies that do not require state updates on hits, such as FIFO, since updating a set on a hit would require a 4KB page write. These challenges highlight the importance of advanced admission policies (see Section 5.2).
+
+* SOC控制`写放大`是特别具有挑战的
+* 添加一个object到SOC需要写一个4KB的flash page，这会导致`应用层写放大`
+* 移除一个object也会导致4KB的flash page的写，也会导致`应用层写放大`
+* 由于key被hash到集合中，添加一个对象流到SOC会导致随机写操作，这会导致`设备层写放大`
+* soc只支持`不更新集合的eviction策略`，例如FIFO(是指只看中object添加到set/flash page的顺序, 而访问时命中不做任何操作吗？)，因为更新集合会需要4KB的page写
 
 ## 4.3. Implementation of Advanced Features
 > CacheLib supports many applications with demanding requirements. To support these applications efficiently, Cache- Lib implements several advanced features, making them available to all CacheLib-based services under the same, generalpurpose CacheLib API. We describe the implementation of four important features: structured items, caching large and small objects, warm restarts, and resource monitoring, corresponding to challenges already discussed in Section 3.
@@ -210,7 +244,7 @@ tags:
   * CacheLib支持固定大小的对象数组，`无需为每个entry添加额外的开销`
   * Map类型支持可变对象大小，并支持有序和无序变体。Map的每个entry的开销为4B，用于存储其大小。
 
-> `Caching large and small objects in DRAM`. To store objects larger than 4MB in size, CacheLib chains multiple DRAM Items together into one logical large item. This chaining requires an additional 4B next pointer per object in the chain. The most common use case for large objects is the storage of structured items. While it is uncommon for a single, logical object to be larger than 4MB, we frequently see Arrays or Maps that comprise more than 4MB in aggregate. CacheLib also features compact caches, DRAM caches designed to cache objects smaller than a cache line (typically 64B or 128B). Compact caches store objects with the same key size and object size in a single cache line [18, 29, 46, 80]. Compact caches are `set-associative`(集合关联) caches, where each cache line is a set which is indexed by a key’s hash. LRU eviction is done within each set by repositioning objects within a cache line. Compact caches have no per-object overhead. One prominent example of using compact caches is CacheLib’s support for negative caching. Negative cache objects indicate that a backend query has previously returned an empty result. Negative cache objects are small, fixed-size objects which only require storing a key to identify the empty query. As discussed in Section 3.5, negative caching improves hit ratios drastically in SocialGraph. Negative caching is not used by Lookaside, Storage, or CDN, but it is employed by 4 of the 10 largest CacheLib-based systems. Both of these features reinforce CacheLib’s `overarching`(首要的) design, which is to provide specialized solutions for objects of different sizes in order to keep per-object overheads low.
+> `Caching large and small objects in DRAM`. To store objects larger than 4MB in size, CacheLib chains multiple DRAM Items together into one logical large item. This chaining requires an additional 4B next pointer per object in the chain. The most common use case for large objects is the storage of structured items. While it is uncommon for a single, logical object to be larger than 4MB, we frequently see Arrays or Maps that comprise more than 4MB in aggregate. CacheLib also features compact caches, DRAM caches designed to cache objects smaller than a cache line (typically 64B or 128B). Compact caches store objects with the same key size and object size in a single cache line [18, 29, 46, 80]. Compact caches are `set-associative`(集合关联) caches, where each cache line is a set which is indexed by a key’s hash. LRU eviction is done within each set by repositioning objects within a cache line. Compact caches have no per-object overhead. One `prominent`(突出的，显眼的) example of using compact caches is CacheLib’s support for negative caching. Negative cache objects indicate that a backend query has previously returned an empty result. Negative cache objects are small, fixed-size objects which only require storing a key to identify the empty query. As discussed in Section 3.5, negative caching improves hit ratios drastically in SocialGraph. Negative caching is not used by Lookaside, Storage, or CDN, but it is employed by 4 of the 10 largest CacheLib-based systems. Both of these features reinforce CacheLib’s `overarching`(首要的) design, which is to provide specialized solutions for objects of different sizes in order to keep per-object overheads low.
 
 * CacheLib 允许缓存大于4MB的对象，将多个DRAM Item链接在一起，形成一个逻辑大对象。这需要每个对象链中的附加4B的next指针
 * 对于large objects而言，常用的应用场景是存储结构化对象。虽然单个逻辑对象通常不会超过4MB，但通常会看到包含超过4MB的对象的`数组或MAP`
@@ -218,17 +252,26 @@ tags:
   * compact caches 存储将具有相同键大小和对象大小的对象在一个缓存行中，通常为 64B 或 128B
   * compact caches 是`集合关联`的缓存，其中每个缓存行都是一个索引的集合，由对象的哈希值索引
   * 每个缓存行是一个被键的哈希索引的集合。LRU eviction在每个集合内通过重新定位缓存行内的对象来实现。compact caches 对于item没有额外开销
-* 10个基于CacheLib的系统中有4个应用都使用了 Negative cache
+* 紧凑缓存的一个显著例子是CacheLib对负缓存的支持。
+* 负缓存是指后端之前的查询返回了空结果的对象。负缓存对象是小型固定大小的对象，仅需存储一个键以识别空查询。
+* 负缓存显著改善了SocialGraph的命中率。负缓存未被Lookaside、Storage或CDN使用，
+* 但在10个最大的CacheLib系统中，有4个采用了这一功能。这两个功能强化了CacheLib的首要设计，即为不同大小的对象提供专业的解决方案，以保持每个对象的开销低。
 
-
-> `Dynamic resource usage and monitoring`. CacheLib monitors the total system memory usage and continuously adapts the DRAM cache size to stay below a specified bound. CacheLib exposes several parameters to control the memory usage mechanism. If the system free memory drops below lowerLimitGB bytes, CacheLib will iteratively free percentPerIteration percent of the difference between upperLimitGB and lowerLimitGB until system free memory rises above upperLimitGB. A maximum of maxLimitPercent of total cache size can be freed by this process, preventing the cache from becoming too small. Although freeing memory may cause evictions, this feature is designed to prevent outright crashes which are far worse for cache hit ratios (see Figure 15). As system free memory increases, CacheLib reclaims memory by an analogous process.
+> `Dynamic resource usage and monitoring`. CacheLib monitors the total system memory usage and continuously adapts the DRAM cache size to stay below a specified bound. CacheLib exposes several parameters to control the memory usage mechanism. If the system free memory drops below lowerLimitGB bytes, CacheLib will iteratively free percentPerIteration percent of the difference between upperLimitGB and lowerLimitGB until system free memory rises above upperLimitGB. A maximum of maxLimitPercent of total cache size can be freed by this process, preventing the cache from becoming too small. Although freeing memory may cause evictions, this feature is designed to prevent `outright`(完全的，彻底的) crashes which are far worse for cache hit ratios (see Figure 15). As system free memory increases, CacheLib reclaims memory by an analogous process.
 
 * CacheLib 监控了系统内存使用情况，并持续调整 DRAM 缓存的大小，以保持在指定的边界以下
 * CacheLib 提供了 几种参数 来控制`内存使用机制`
-  * 
+  * 如果系统空闲内存低于lowerLimitGB字节，CacheLib会迭代地释放upperLimitGB和lowerLimitGB之间的百分比percentPerIteration，直到系统空闲内存高于upperLimitGB
+  * 这个过程最多可以释放总缓存大小的 maxLimitPercent，防止缓存变得过小。
+  * 尽管释放内存可能会导致eviction，但此功能旨在防止系统彻底崩溃，这对于缓存命中率来说是更糟糕的情况（见图 15）。随着系统自由内存的增加，CacheLib 也通过类似的过程来回收内存。”
 
 > `Warm restarts`. CacheLib implements warm restarts by allocating DRAM cache space using POSIX shared memory [76]. This allows a cache to shut down while leaving its cache state in shared memory. A new cache can then take ownership of the cache state on start up. The DRAM cache keeps its index permanently in shared memory by default. All other DRAM cache state is serialized into shared memory during shutdown. The LOC B-tree index and SOC Bloom filters are serialized and written in a dedicated section on flash during shutdown.
 
-* CacheLib 通过使用POSIX共享内存来实现`Warm restarts`
-* 
+* CacheLib 通过使用POSIX共享内存分配DRAM cache空间来实现`Warm restarts`
+* 允许一个缓存在关闭时保留其缓存状态。新缓存可以在启动时获取到该缓存状态。
+* DRAM 缓存`默认情况下永久保留其索引`在共享内存中。
+* 其他 DRAM 缓存状态在关闭时序列化到共享内存中。
+* LOC B-tree索引和SOC的布隆过滤器在关闭时序列化并写入到闪存中的专用部分。
 
+
+# 5. Evaluation
