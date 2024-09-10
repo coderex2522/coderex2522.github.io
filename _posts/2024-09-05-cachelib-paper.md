@@ -11,7 +11,6 @@ tags:
     - CacheLib
     - 论文笔记
 ---
-### 背景
 
 论文笔记 《[The CacheLib Caching Engine: Design and Experiences at Scale](https://www.usenix.org/system/files/osdi20-berg.pdf)》
 
@@ -33,6 +32,8 @@ tags:
 # 4. Design and Implementation
 > CacheLib enables the construction of fast, stable caches for a broad set of use cases. To address common challenges across these use cases as described in Sections 2 and 3, we identify `the following features` as necessary requirements for a `generalpurpose` caching engine.   
 
+* 以下`特性`是通用缓存引擎的`必要要求`
+
  > `Thread-safe cache primitives`: To simplify programming for applications that handle highly bursty traffic, CacheLib provides a thread-safe API for reads, writes, and deletes. In addition, thread-safety simplifies the implementation of consistency and invalidation protocols. Concurrent calls to the CacheLib API leave the cache in a valid state, respect linearizablility [47] if referencing a common key, and incur minimal resource contention.
 
  * CacheLib 提供了线程安全的缓存接口(read/write/delete)，简化了应用程序应对突发峰值流量的编程
@@ -43,11 +44,12 @@ tags:
 
  * CacheLib 支持混合缓存，能够实现大容量的部署，拥有TB级缓存容量
  * CacheLib 隐藏了flash缓存系统的复杂性，通过提供`相同的字节地址接口`，无论底层存储介质是什么，都为应用程序提供一致的接口
+ * 透明性使得应用程序开发者可以忽略对象在不同存储介质上的写入时间和位置
  * 增加应用程序可移植性，使应用程序可以在新硬件配置上运行，而无需修改代码
 
  > `Low resource overhead`: CacheLib achieves `high throughput and low memory and CPU usage` for a broad range of workloads (Section 2). This makes CacheLib suitable for in-process use cases where the cache must share resources with an application. Low resource overheads allow CacheLib to support use cases with many small objects.   
 
-* CacheLib 具备`高吞吐量和低内存和CPU使用量`，使其适用于进程内使用场景，缓存必须与应用程序共享资源
+* CacheLib 具备`高吞吐量和低内存和CPU使用量`，使其适用于进程内使用场景，因为这种场景下 缓存必须与应用程序`共享资源`
  
  > `Structured items`: CacheLib provides a native implementation of arrays and hashmaps that can be cached and mutated efficiently without incurring any serialization overhead. Caching structured data makes it easy for programmers to efficiently integrate a cache with application logic. Dynamic resource monitoring, allocation, and OOM protection: To prevent crashes from temporary spikes in system memory usage, CacheLib monitors total system memory usage. CacheLib dynamically allocates and frees memory used by the cache to control the overall system memory usage. 
 
@@ -59,7 +61,7 @@ tags:
 
 * 为了无缝处理代码更新，CacheLib 可以执行`热重启`，保持缓存的状态
 
-## 4.1. CacheLib API
+### 4.1. CacheLib API
 > The CacheLib API is designed to be simple enough to allow application programmers to quickly build in-process caching layers with little need for cache tuning and configuration. At the same time, CacheLib must scale to support complex application-level consistency protocols, as well as zero-copy access to data for high performance. Choosing an API which is both simple and powerful was an important concern in the design of CacheLib. 
 
 * CacheLib 提供简单的API，方便上层应用快速构建`in-process caching layers`, 并且不需要缓存调优和配置
@@ -95,7 +97,7 @@ tags:
 
 > CacheLib implements these APIs in C++, with binding to other languages such as Rust.
 
-## 4.2 Architecture Overview
+### 4.2 Architecture Overview
 > CacheLib is designed to be scalable enough to accommodate massive working sets (Section 3.1) with highly variable sizes (Section 3.2). To achieve low per-object overhead, a single CacheLib cache is composed of several subsystems, each of which is `tailored to`(针对,为...量身定制) a particular storage medium and object size. Specifically, CacheLib consists of a DRAM cache and a flash cache. The flash cache is composed of two caches: the Large Object Cache (LOC) for Items>=2KB in size and Small Object Cache (SOC) for Items <2KB in size.
 
 * CacheLib 由两个子系统组成，一个用于DRAM，一个用于Flash
@@ -228,7 +230,7 @@ tags:
 * 由于key被hash到集合中，添加一个对象流到SOC会导致随机写操作，这会导致`设备层写放大`
 * soc只支持`不更新集合的eviction策略`，例如FIFO(是指只看中object添加到set/flash page的顺序, 而访问时命中不做任何操作吗？)，因为更新集合会需要4KB的page写
 
-## 4.3. Implementation of Advanced Features
+### 4.3. Implementation of Advanced Features
 > CacheLib supports many applications with demanding requirements. To support these applications efficiently, Cache- Lib implements several advanced features, making them available to all CacheLib-based services under the same, generalpurpose CacheLib API. We describe the implementation of four important features: structured items, caching large and small objects, warm restarts, and resource monitoring, corresponding to challenges already discussed in Section 3.
 
 * 为了高效支持多种应用，CacheLib实现了许多高级功能，使其可以在所有基于CacheLib的服务中通用。我们描述了CacheLib实现的四个重要的功能
@@ -275,3 +277,7 @@ tags:
 
 
 # 5. Evaluation
+
+# Appendix
+### A. Cache Lookup Order and Latency
+> CacheLib uses the lookup sequence 1) DRAM cache, 2) LOC, 3) SOC. Note that an object’s size is not known in advance. So, after a DRAM cache miss, CacheLib does not know whether the object is stored in the LOC or the SOC. Thus, it has to query one of them first, and on a miss, query the other. The order for CacheLib’s lookup order is motivated by the following analysis of average lookup penalties (also known as average memory access time, AMAT [46]). We consider the lookup penalty for each cache component as the time to determine that an object is not cached in this component. Our key assumption is that reading from DRAM is orders of magnitude faster than flash reads (e.g., 100ns compared to 16us [25]). Thus, the lookup penalty for the DRAM cache is a few memory references (say 500ns). To calculate the penalty for the LOC, recall that the LOC stores neither an object’s key nor the object’s exact size in memory to reduce DRAM metadata overhead. The LOC is indexed via 4-byte hash-partitioned B-trees, which each use 4-byte hashes to identify an object’s offset. If the overall 8-byte-hash does not have a hash collision, then the LOC’s lookup penalty constitutes a few memory references (say 1us, due to hash operations). If there is a hash collision, the LOC requires a flash read (16us) to compare the object key and determine the miss status. Assuming the smallest LOC object size (2KB) and 1TB of flash, at most 536 million objects are stored in the LOC. Thus, the probability of an 8-byte-hash collision can be calculated to be less than one in a million and the LOC’s average lookup penalty is slightly more than 1us. To calculate the penalty for the SOC, recall that the SOC does not use an in-memory index. The SOC uses a per-page Bloom filter (say 1us) to opportunistically determine the miss status. However, as these Bloom filters are small, their error rate is 10%. In case of a Bloom filter error, the SOC requires a flash read (16us) to compare the object key. The SOC’s average lookup penalty is thus 2.6us. The average latency (AMAT) of CacheLib with the default order (1) DRAM cache, (2) LOC, (3) SOC is as follows, where L denotes lookup latency and H hit ratio: L(DRAM) With the order of SOC and LOC inverted, the average latency would increase by several microseconds, depending on the LOC and SOC hit ratios. Thus CacheLib queries the SOC last.
