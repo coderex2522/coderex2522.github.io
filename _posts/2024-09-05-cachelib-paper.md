@@ -51,9 +51,12 @@ tags:
 
 * CacheLib 具备`高吞吐量和低内存和CPU使用量`，使其适用于进程内使用场景，因为这种场景下 缓存必须与应用程序`共享资源`
  
- > `Structured items`: CacheLib provides a native implementation of arrays and hashmaps that can be cached and mutated efficiently without incurring any serialization overhead. Caching structured data makes it easy for programmers to efficiently integrate a cache with application logic. Dynamic resource monitoring, allocation, and OOM protection: To prevent crashes from temporary spikes in system memory usage, CacheLib monitors total system memory usage. CacheLib dynamically allocates and frees memory used by the cache to control the overall system memory usage. 
+ > `Structured items`: CacheLib provides a native implementation of arrays and hashmaps that can be cached and mutated efficiently without incurring any serialization overhead. Caching structured data makes it easy for programmers to efficiently integrate a cache with application logic.
 
 * CacheLib 提供了数组和哈希表的原生实现，能够在不产生任何序列化开销的情况下高效缓存和修改
+
+>  `Dynamic resource monitoring, allocation, and OOM protection`: To prevent crashes from temporary spikes in system memory usage, CacheLib monitors total system memory usage. CacheLib dynamically allocates and frees memory used by the cache to control the overall system memory usage. 
+
 * CacheLib 提供了结构化数据的原生实现，可以轻松的将缓存集成到应用程序逻辑中
 * 监控系统内存使用情况，动态分配和释放内存，防止因临时内存使用峰值导致系统崩溃
 
