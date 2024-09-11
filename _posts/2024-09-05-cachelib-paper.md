@@ -29,6 +29,31 @@ tags:
 * 本文描述了从独立、专业的缓存过渡到CacheLib广泛应用过程中的经验。
 * 我们解释了Facebook的生产工作负载和用例特征如何影响了重要的设计决策。
 
+
+# 2. Motivation: Caching Use Cases
+> `Application look-aside caches`. Web applications have a wide range of caching needs. For example, applications must cache database queries, user data, and usage statistics. Providing a specialized caching service for each application would be inefficient and hard to maintain. Thus, applications use RPCs to access a set of shared caching services. Each caching service consists of a large distributed system of caches.
+
+* Web 应用 有着各种缓存需求，例如数据库查询、用户数据、使用统计等
+* 为每一个应用程序提供一个专用缓存是`inefficient and hard to maintain`
+* 应用程序使用RPC访问一组共享的缓存服务, 每个缓存服务由一个大的分布式系统组成
+
+> `In-process caches`. Many applications cannot tolerate the RPC overhead of a remote cache. CacheLib makes it easy for these applications to include high-performance, in-process caches that are decoupled from the application logic. For example, some backend applications use a CacheLib cache to store client session information which is used to rate-limit clients. Specifically, these applications cache flow counters that see very high bursts in request rates but can be evicted once a flow slows down. In this case, the latency and bandwidth requirements of the cache make remote caches infeasible. Instead, applications instantiate a CacheLib cache which provides zero-copy access to cached flow counters. 
+
+* 应用程序不能容忍RPC的开销，因此需要一个`in-process cache`，它与应用程序逻辑解耦。
+* 例如
+  * 一些后台应用程序使用 CacheLib 缓存来存储客户端会话信息，从而限制客户端的请求速率。
+  * 具体来说，这些应用程序缓存流计数器，允许在请求速率高峰时快速访问，但在流量减缓时可以被驱逐。
+  * 在这种情况下，缓存的延迟和带宽要求使得远程缓存不可行。相反，应用程序实例化一个 CacheLib 缓存，提供对缓存流计数器的零拷贝访问。
+
+> `Machine-learning-model serving systems`. User-facing machine-learning applications benefit from caching in multiple places. First, models often use inputs based on how users interact with content (e.g., liking a piece of content). Content interaction counters are thus cached so applications can quickly access the inputs required to generate a prediction (e.g., ranking content). Second, because repeatedly generating predictions based on the same inputs is computationally expensive, model predictions are also cached.
+
+> `Storage-backend cache`. Facebook uses large clusters of servers with spinning disks to store blocks of persistent data. Even with several caching layers in front of the block storage servers, some blocks remain popular enough to exceed the target IOPS of the disks. Storage servers use flash drives to cache popular blocks and shield the spinning disks from load. To support byte-range requests and append operations, these flash caches are tightly integrated in the storage-system stack.
+
+* Facebook 使用大型服务器集群和旋转磁盘(HDD)来存储持久数据块。
+* 即使在块存储服务器前面有多个缓存层，某些数据块依然热门到超过磁盘的目标 IOPS。
+* 存储服务器使用闪存驱动器来缓存热门数据块，从而减轻旋转磁盘(HDD)的负载。
+* 为了支持字节范围请求和追加操作，这些闪存缓存与存储系统栈紧密集成。
+
 # 4. Design and Implementation
 > CacheLib enables the construction of fast, stable caches for a broad set of use cases. To address common challenges across these use cases as described in Sections 2 and 3, we identify `the following features` as necessary requirements for a `generalpurpose` caching engine.   
 
@@ -116,13 +141,14 @@ tags:
   * 如果空间不足，则从DRAM中evict item，evicted item可能被admit到flash cache，或者被discard
 * `find request`
   * 先检查DRAM，然后LOC，最后SOC. 
-  * 查找的原则是 减少平均内存访问时间
+  * 查找的原则是 减少平均内存访问时间(附录中有相关定义)
   * 查找的返回的结果是一个ItemHandle
     * 如果请求的对象在DRAM中，则ItemHandle就ready to use
     * 如果请求的对象在flash中，则需要异步fetch
     * 如果请求的对象不存在，则返回一个empty ItemHandle
 
-> We now describe CacheLib’s subsystems in more detail. DRAM cache. CacheLib’s DRAM cache uses a chained hash table to perform lookups. The DRAM cache can be partitioned into separate pools, each with its own eviction policy. Programmers select a particular PoolId when calling allocate (see Figure 7), allowing the isolation of different types of traffic within a single cache instance.
+> We now describe CacheLib’s subsystems in more detail. 
+> `DRAM cache`. CacheLib’s DRAM cache uses a chained hash table to perform lookups. The DRAM cache can be partitioned into separate pools, each with its own eviction policy. Programmers select a particular PoolId when calling allocate (see Figure 7), allowing the isolation of different types of traffic within a single cache instance.
 
 * DRAM Cache 使用一个链式哈希表(chained hash table)来执行查找
 * DRAM Cache 可以被partition 成一个个独立的pool，每个pool都有自己的eviction policy
@@ -135,7 +161,7 @@ tags:
 * CacheLib 使用4MB的slab，并实现了一个自定义的slab allocator
 * 每个slab需要7B的内存开销，3B是内部metadata，4B用于标识slab中objects的大小
 * CacheLib 负载包括一些特定大小的objects，因此需要根据负载来配置slab class的大小，以减少fragmentation 内存碎片
-* CacheLib 针对size(<64B)或者(>4MB)的对象会进一步优化 (在4.3节描述)
+* CacheLib 针对size(<64B)或者(>4MB)的对象会进一步优化 (在4.3节描述, compact cache)
 
 > Each slab class maintains its own eviction policy state. CacheLib is designed to support the continual development of new eviction policies, and currently supports LRU, LRU with multiple insertion points, 2Q [54, 93], and TinyLFU [31]. These eviction policies differ in their overheads and their biases towards either recency or frequency, and are thus configured on a per-workload basis as well. To approximate a global eviction policy, memory is rebalanced between slab classes using known rebalancing algorithms [72]. To support these policies, among other features, CacheLib dedicates 31B of DRAM overhead per item. Table 1 describes the metadata which comprises this DRAM overhead.
 
@@ -284,3 +310,27 @@ tags:
 # Appendix
 ### A. Cache Lookup Order and Latency
 > CacheLib uses the lookup sequence 1) DRAM cache, 2) LOC, 3) SOC. Note that an object’s size is not known in advance. So, after a DRAM cache miss, CacheLib does not know whether the object is stored in the LOC or the SOC. Thus, it has to query one of them first, and on a miss, query the other. The order for CacheLib’s lookup order is motivated by the following analysis of average lookup penalties (also known as average memory access time, AMAT [46]). We consider the lookup penalty for each cache component as the time to determine that an object is not cached in this component. Our key assumption is that reading from DRAM is orders of magnitude faster than flash reads (e.g., 100ns compared to 16us [25]). Thus, the lookup penalty for the DRAM cache is a few memory references (say 500ns). To calculate the penalty for the LOC, recall that the LOC stores neither an object’s key nor the object’s exact size in memory to reduce DRAM metadata overhead. The LOC is indexed via 4-byte hash-partitioned B-trees, which each use 4-byte hashes to identify an object’s offset. If the overall 8-byte-hash does not have a hash collision, then the LOC’s lookup penalty constitutes a few memory references (say 1us, due to hash operations). If there is a hash collision, the LOC requires a flash read (16us) to compare the object key and determine the miss status. Assuming the smallest LOC object size (2KB) and 1TB of flash, at most 536 million objects are stored in the LOC. Thus, the probability of an 8-byte-hash collision can be calculated to be less than one in a million and the LOC’s average lookup penalty is slightly more than 1us. To calculate the penalty for the SOC, recall that the SOC does not use an in-memory index. The SOC uses a per-page Bloom filter (say 1us) to opportunistically determine the miss status. However, as these Bloom filters are small, their error rate is 10%. In case of a Bloom filter error, the SOC requires a flash read (16us) to compare the object key. The SOC’s average lookup penalty is thus 2.6us. The average latency (AMAT) of CacheLib with the default order (1) DRAM cache, (2) LOC, (3) SOC is as follows, where L denotes lookup latency and H hit ratio: L(DRAM) With the order of SOC and LOC inverted, the average latency would increase by several microseconds, depending on the LOC and SOC hit ratios. Thus CacheLib queries the SOC last.
+
+
+### Advanced Admission Policies for Flash
+> One significant challenge in using flash for caching is respecting the limited write endurance of flash devices. If all DRAM evictions in a hybrid cache were admitted to flash, we would observe write rates 50% above the rate which allows flash devices to achieve their target life span. <u>A flash admission policy thus plays an important role in CacheLib’s performance</u>.
+
+* 使用Flash作为Cache时，一个重要的挑战是Flash设备的 `limited write endurance`
+* 如果所有DRAM驱逐数据都被存储到闪存，那么我们将观察到的写入速率将比允许闪存设备实现预期寿命的写入速率高出50%
+
+> Flashield [32] is a recently proposed flash admission policy. Flashield relies on observing an object as it traverses the DRAM portion of a hybrid cache. When an object is evicted from DRAM, Flashield makes a flash admission decision based on how often the object was accessed while in DRAM.
+
+* Flashield [32] 是最近提出的Flash的`admission policy`
+* Flashield依赖于观察对象在混合缓存的DRAM部分的传播情况。
+* 当对象从DRAM中驱逐时，Flashield根据该对象在DRAM中被访问的频率做出闪存接收决策。
+
+> Unfortunately, DRAM lifetimes at Facebook are too short for Flashield to be effective. A significant number of objects are popular enough to produce hits if stored on flash, but do not receive DRAM cache hits. In fact, for an L2 Lookaside cache, only 14% of objects being considered for flash admission have received either a read or a write while in DRAM. 
+
+* Facebook的DRAM寿命太短，无法使Flashield有效。
+
+> To adapt the main idea behind Flashield to Facebook’s environment, CacheLib explicitly gathers features about objects beyond their DRAM-cache lifetime. We use Bloom filters to record the past six hours of accesses. Additionally, we change the admission policy’s prediction metrics from the abstract notion of “flashiness” to instead directly predict the number of reads an object is expected to receive in the future.
+
+
+
+
+> Our advanced admission policy was trained and deployed in production for SocialGraph . The default admission policy for CacheLib flash caches is to admit objects with a fixed probability that keeps flash write rates below a target rate in expectation. Compared to this default admission policy, the advanced admission policy wrote 44% fewer bytes to the flash device without decreasing the cache hit ratio. Hence, while training the models required for the advanced admission policy can be cumbersome, this policy gain significantly extend the lifetime of flash devices in production.
