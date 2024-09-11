@@ -309,7 +309,40 @@ tags:
 
 # Appendix
 ### A. Cache Lookup Order and Latency
-> CacheLib uses the lookup sequence 1) DRAM cache, 2) LOC, 3) SOC. Note that an object’s size is not known in advance. So, after a DRAM cache miss, CacheLib does not know whether the object is stored in the LOC or the SOC. Thus, it has to query one of them first, and on a miss, query the other. The order for CacheLib’s lookup order is motivated by the following analysis of average lookup penalties (also known as average memory access time, AMAT [46]). We consider the lookup penalty for each cache component as the time to determine that an object is not cached in this component. Our key assumption is that reading from DRAM is orders of magnitude faster than flash reads (e.g., 100ns compared to 16us [25]). Thus, the lookup penalty for the DRAM cache is a few memory references (say 500ns). To calculate the penalty for the LOC, recall that the LOC stores neither an object’s key nor the object’s exact size in memory to reduce DRAM metadata overhead. The LOC is indexed via 4-byte hash-partitioned B-trees, which each use 4-byte hashes to identify an object’s offset. If the overall 8-byte-hash does not have a hash collision, then the LOC’s lookup penalty constitutes a few memory references (say 1us, due to hash operations). If there is a hash collision, the LOC requires a flash read (16us) to compare the object key and determine the miss status. Assuming the smallest LOC object size (2KB) and 1TB of flash, at most 536 million objects are stored in the LOC. Thus, the probability of an 8-byte-hash collision can be calculated to be less than one in a million and the LOC’s average lookup penalty is slightly more than 1us. To calculate the penalty for the SOC, recall that the SOC does not use an in-memory index. The SOC uses a per-page Bloom filter (say 1us) to opportunistically determine the miss status. However, as these Bloom filters are small, their error rate is 10%. In case of a Bloom filter error, the SOC requires a flash read (16us) to compare the object key. The SOC’s average lookup penalty is thus 2.6us. The average latency (AMAT) of CacheLib with the default order (1) DRAM cache, (2) LOC, (3) SOC is as follows, where L denotes lookup latency and H hit ratio: L(DRAM) With the order of SOC and LOC inverted, the average latency would increase by several microseconds, depending on the LOC and SOC hit ratios. Thus CacheLib queries the SOC last.
+> CacheLib uses the lookup sequence 1) DRAM cache, 2) LOC, 3) SOC. Note that an object’s size is not known in advance. So, after a DRAM cache miss, CacheLib does not know whether the object is stored in the LOC or the SOC. Thus, it has to query one of them first, and on a miss, query the other.
+
+* CacheLib 使用的查找顺序是
+  1. DRAM cache
+  2. LOC
+  3. SOC
+* Object size 事先不知道，因此CacheLib无法知道object是存储在LOC还是SOC。因此，它必须先查询其中一个，如果失败，则查询另一个。
+
+> The order for CacheLib’s lookup order is motivated by the following analysis of average lookup penalties (also known as average memory access time, AMAT [46]). We consider the lookup penalty for each cache component as the time to determine that an object is not cached in this component. Our key assumption is that reading from DRAM is orders of magnitude faster than flash reads (e.g., 100ns compared to 16us [25]). Thus, the lookup penalty for the DRAM cache is a few memory references (say 500ns).
+
+* CacheLib 的查找顺序是`平均查找惩罚`（也称为`平均内存访问时间`，AMAT [46]）的分析
+* 我们考虑每个缓存组件的查找惩罚，即确定该对象未在该组件中缓存所需的时间
+* 我们的关键假设是，从 DRAM 读取的速度比闪存读取快几个数量级（例如，100ns 对比 16us [25]）
+* 因此，DRAM 缓存的查找惩罚为几个内存引用（约 500ns）
+
+> To calculate the penalty for the LOC, recall that the LOC stores neither an object’s key nor the object’s exact size in memory to reduce DRAM metadata overhead. The LOC is indexed via 4-byte hash-partitioned B-trees, which each use 4-byte hashes to identify an object’s offset. If the overall 8-byte-hash does not have a hash collision, then the LOC’s lookup penalty constitutes a few memory references (say 1us, due to hash operations). If there is a hash collision, the LOC requires a flash read (16us) to compare the object key and determine the miss status. Assuming the smallest LOC object size (2KB) and 1TB of flash, at most 536 million objects are stored in the LOC. Thus, the probability of an 8-byte-hash collision can be calculated to be less than one in a million and the LOC’s average lookup penalty is slightly more than 1us.
+
+* LOC 在内存中不存储对象的键或对象的确切大小，以减少 DRAM 元数据开销。
+* LOC 通过 4 字节哈希分区的 B 树进行索引，每个 B 树使用 4 字节哈希来标识对象的偏移量。
+* 如果整体 8 字节哈希没有发生哈希冲突，则 LOC 的查找惩罚由几个内存引用组成（约 1us，由于哈希操作）。
+* 如果发生哈希冲突，LOC 则需要进行闪存读取（16us）以比较对象键并确定未命中状态。
+* 假设最小的 LOC 对象大小为 2KB，并且闪存容量为 1TB，LOC 中最多可以存储 5.36 亿个对象。因此，8 字节哈希发生冲突的概率可计算为小于百万分之一，LOC 的平均查找惩罚略高于 1us 
+
+> To calculate the penalty for the SOC, recall that the SOC does not use an in-memory index. The SOC uses a per-page Bloom filter (say 1us) to opportunistically determine the miss status. However, as these Bloom filters are small, their error rate is 10%. In case of a Bloom filter error, the SOC requires a flash read (16us) to compare the object key. The SOC’s average lookup penalty is thus 2.6us.
+
+* SOC不使用内存索引。SOC 使用每页的布隆过滤器（约 1us）来机会性地确定未命中状态。
+* 由于这些布隆过滤器较小，它们的误差率为 10%。
+* 在布隆过滤器错误的情况下，SOC 需要进行闪存读取（16us）来比较对象键。因此，SOC 的平均查找惩罚约为 2.6us。
+
+> The average latency (AMAT) of CacheLib with the default order (1) DRAM cache, (2) LOC, (3) SOC is as follows, where L denotes lookup latency and H hit ratio: L(DRAM)+ (1 - H(DRAM)) * (L(LOC)+ (1 - H(LOC)) * (L(SOC)))
+. With the order of SOC and LOC inverted, the average latency would increase by several microseconds, depending on the LOC and SOC hit ratios. Thus CacheLib queries the SOC last.
+
+* CacheLib 默认顺序（1）DRAM 缓存，（2）LOC，（3）SOC 的平均延迟（AMAT）
+* 如果 SOC 和 LOC 的顺序调换，平均延迟将增加几个微秒，具体取决于 LOC 和 SOC 的命中率。因此，CacheLib 将 SOC 作为最后查询。
 
 
 ### Advanced Admission Policies for Flash
@@ -326,11 +359,19 @@ tags:
 
 > Unfortunately, DRAM lifetimes at Facebook are too short for Flashield to be effective. A significant number of objects are popular enough to produce hits if stored on flash, but do not receive DRAM cache hits. In fact, for an L2 Lookaside cache, only 14% of objects being considered for flash admission have received either a read or a write while in DRAM. 
 
-* Facebook的DRAM寿命太短，无法使Flashield有效。
+* Facebook的DRAM寿命太短，无法使Flashield有效(item在DRAM中的寿命太短，无法使Flashield有效)
+* 大量的object在Flash中得到命中，但未在DRAM中得到命中(寿命太短)。
+* 事实上，对于L2 lookaside缓存，只有14%的对象在考虑闪存接收入库时，在DRAM中收到了读取或写入操作。
 
-> To adapt the main idea behind Flashield to Facebook’s environment, CacheLib explicitly gathers features about objects beyond their DRAM-cache lifetime. We use Bloom filters to record the past six hours of accesses. Additionally, we change the admission policy’s prediction metrics from the abstract notion of “flashiness” to instead directly predict the number of reads an object is expected to receive in the future.
+> To adapt the main idea behind Flashield to Facebook’s environment, CacheLib explicitly gathers features about objects beyond their DRAM-cache lifetime. We use Bloom filters to record the past six hours of accesses. Additionally, we change the admission policy’s prediction metrics from the abstract notion of “flashiness” to instead directly predict the number of reads an object is expected to receive in the future.   
 
-
-
+为了将Flashield的主要思想应用到Facebook的环境中, CacheLib明确收集对象在其DRAM缓存生命周期之外的特征
+* 使用布隆过滤器记录过去六小时的访问
+* 将`admission policy`的预测指标从`抽象的“闪存性”概念`改为`直接预测对象在未来预计将接收到的读取次数`
 
 > Our advanced admission policy was trained and deployed in production for SocialGraph . The default admission policy for CacheLib flash caches is to admit objects with a fixed probability that keeps flash write rates below a target rate in expectation. Compared to this default admission policy, the advanced admission policy wrote 44% fewer bytes to the flash device without decreasing the cache hit ratio. Hence, while training the models required for the advanced admission policy can be cumbersome, this policy gain significantly extend the lifetime of flash devices in production.
+
+* 我们的`advanced admission policy`已经在SocialGraph生产中进行了训练和部署。
+* CacheLib闪存缓存的`default admission policy`是以固定概率p接收对象，以在预期上保持闪存写入速率低于目标速率。
+* 与`default admission policy`相比，`advanced admission policy`在不降低缓存命中率的情况下，将写入到闪存设备的字节数减少了44%。
+* 尽管训练用于`advanced admission policy`的模型可能很繁琐，但该政策显著延长了生产中闪存设备的使用寿命。
