@@ -13,10 +13,25 @@ tags:
 论文笔记 《[What Goes Around Comes Around... And Around...](https://db.cs.cmu.edu/papers/2024/whatgoesaround-sigmodrec2024.pdf)》
 
 # Abstract
-> Two decades ago, one of us co-authored a paper commenting on the previous 40 years of data modelling research and development [188]. That paper demonstrated that the relational model (RM) and SQL are the prevailing choice for database management systems (DBMSs), despite efforts to replace either them. Instead, SQL absorbed the best ideas from these alternative approaches.
+> Two decades ago, one of us co-authored a paper commenting on the previous 40 years of data modelling research and development [188]. That paper demonstrated that `the relational model (RM) and SQL are the <u>prevailing choice</u>主流的 for database management systems (DBMSs)`, despite efforts to replace either them. Instead, SQL absorbed the best ideas from these alternative approaches.
 > We revisit this issue and argue that this same evolution has continued since 2005. Once again there have been repeated efforts to replace either SQL or the RM. But the RM continues to be the dominant data model and SQL has been extended to capture the good ideas from others. As such, we expect more of the same in the future, namely the continued evolution of SQL and relational DBMSs (RDBMSs). We also discuss DBMS implementations and argue that the major advancements have been in the RM systems, primarily driven by changing hardware characteristics.
 
+- 我们预计未来会出现更多类似的情况，即SQL和关系型数据库管理系统（RDBMS）的持续演变。我们还讨论了DBMS的实现，认为主要的进展发生在关系模型系统中，这主要是由硬件特性的变化驱动的。”
+
 # Introduction
+> In 2005, one of the authors participated in writing a chapter for the Red Book titled “What Goes Around Comes Around” [188]. That paper examined the major data modelling movements since the 1960s: 
+• Hierarchical (e.g., IMS): late 1960s and 1970s  
+• Network (e.g., CODASYL): 1970s  
+• Relational: 1970s and early 1980s  
+• Entity-Relationship: 1970s  
+• Extended Relational: 1980s  
+• Semantic: late 1970s and 1980s  
+• Object-Oriented: late 1980s and early 1990s  
+• Object-Relational: late 1980s and early 1990s  
+• Semi-structured (e.g., XML): late 1990s and 2000s  
+> Our conclusion was that the relational model with an extendable type system (i.e., object-relational) has dominated all comers来者，竞争者, and nothing else has succeeded in the marketplace. Although many of the non-relational DBMSs covered in 2005 still exist today, their vendors have relegated降级 them to legacy maintenance mode and nobody is building new applications on them. <u>This persistence is more of a testament to the “stickiness” of data rather than the lasting power of these systems.</u>这种持久性更多地证明了数据的‘黏性’，而不是这些系统的持久能力。 In other words, there still are many IBM IMS databases running today because it is expensive and risky to switch them to use a modern DBMS. But no start-up would willingly choose to build a new application on IMS.  
+> A lot has happened in the world of databases since our 2005 survey. During this time, <u>DBMSs have expanded from their roots in business data processing and are now used for almost every kind of data.</u>DBMS已经从最初的商业数据处理拓展，现在几乎用于各种类型的数据。 This led to the “Big Data” era of the early 2010s and the current trend of integrating machine learning (ML) with DBMS technology.
+
 > In this paper, we analyze the last 20 years of data model and query language activity in databases. We structure our commentary into the following areas: (1) MapReduce Systems, (2) Key-value Stores, (3) Document Databases, (4) Column Family / Wide-Column, (5) Text Search Engines, (6) Array Databases, (7) Vector Databases, and (8) Graph Databases.
 
 按下列领域 structure our commentary
@@ -25,11 +40,11 @@ tags:
 3. Document Databases
 4. Column Family / Wide-Column
 5. Text Search Engines
-6. Array Databases
+6. Array Databasens
 7. Vector Databases
 8. Graph Databases
 
-> We <u>contend</u>认为 that most systems that deviated from SQL or the RM have not dominated the DBMS landscape and often only serve <u>niche markets</u>小众市场. Many systems that started out rejecting the RM with much fanfare (think NoSQL) now expose a SQL-like interface for RM databases. Such systems are now on a path to convergence with RDBMSs. Meanwhile, SQL incorporated the best query language ideas to expand its support for modern applications and remain relevant.
+> We <u>contend</u>认为 that most systems that <u>deviated</u>偏离 from SQL or the RM have not dominated the DBMS landscape and often only serve <u>niche markets</u>小众市场. Many systems that started out rejecting the RM with much <u>fanfare</u>热议，开场 (think NoSQL) now expose a SQL-like interface for RM databases. Such systems are now on a path to convergence with RDBMSs. Meanwhile, SQL incorporated the best query language ideas to expand its support for modern applications and remain relevant.
 
 - 大多数偏离SQL或RM的系统没有主导DBMS发展
 - 有些系统(NoSQL)一开始拒绝RM，但后来暴露了SQL-like接口，使其可以支持RM数据库。
