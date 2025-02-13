@@ -62,8 +62,9 @@ tags:
 
 ## 2.1 MapReduce Systems
 > Google constructed their MapReduce (MR) framework in 2003 as a “`point solution`” for processing its periodic crawl of the internet [122]. At the time, Google had <u>little expertis</u>经验有限 in DBMS technology, and they built MR to meet their crawl needs. In database terms, `Map is a user-defined function` (UDF) that performs computation and/or filtering while `Reduce is a GROUP BY operation`. <u>To a first approximation</u>从初步的角度来看, MR runs a single query:  
-> `SELECT map() FROM crawl_table GROUP BY reduce()`  
-> Google’s MR approach did not <u>prescribe</u>规定 a specific data model or query language. Rather, it was up to the Map and Reduce functions written in a procedural MR program to <u>parse and decipher</u>分析和解读 the contents of data files.
+> - `SELECT map() FROM crawl_table GROUP BY reduce()`   
+
+> Google’s MR approach did not <u>prescribe</u>规定,采用 a specific data model or query language. Rather, it was up to the Map and Reduce functions written in a procedural MR program to <u>parse and decipher</u>分析和解读 the contents of data files.
 
 - 谷歌的MR方法并未规定特定的数据模型或查询语言。相反，解析和解读数据文件内容的任务落在了作为程序运行的Map和Reduce函数上。
 
@@ -81,21 +82,26 @@ tags:
 > `The first event was that the Hadoop technology and services market cratered in the 2010s.` Many enterprises spent a lot of money on Hadoop clusters, only to find there was little interest in this functionality. Developers found it difficult to <u>shoehorn</u>把...硬塞 their application into the restricted MR/Hadoop paradigm. There were considerable efforts to provide a SQL and RM interface on top of Hadoop, most notable was Meta’s Hive [30, 197].  
 
 - 第一个事件是Hadoop技术和 服务市场在2010年代崩溃
+- 在hadoop之上提供sql和rm作用是相当大的， 著名的有meta hive.
 
 > The next event occurred eight months after the CACM article when Google announced that they were moving their crawl processing from MR to BigTable [164]. The reason was that Google needed to interactively update its crawl database in real time but MR was a batch system. Google finally announced in 2014 that MR had no place in their technology stack and killed it off [194].  
-> The first event left the three leading Hadoop vendors (Cloudera, Hortonworks, MapR) without a viable product to sell. Cloudera rebranded Hadoop to mean the whole stack (application, Hadoop, HDFS). In a further sleight-of-hand, Cloudera built a RDBMS, Impala [150], on top of HDFS but not using Hadoop. They realized that Hadoop had no place as an internal interface in a SQL DBMS, and they configured it out of their stack with software built directly on HDFS. In a similar vein, MapR built Drill [22] directly on HDFS, and Meta created Presto [185] to replace Hive.  
+> The first event left the three leading Hadoop vendors (Cloudera, Hortonworks, MapR) without a viable product to sell. Cloudera <u>rebranded</u>重塑 Hadoop to mean the whole stack (application, Hadoop, HDFS). In a further sleight-of-hand, Cloudera built a RDBMS, Impala [150], on top of HDFS but not using Hadoop. They realized that Hadoop had no place as an internal interface in a SQL DBMS, and they configured it out of their stack with software built directly on HDFS. In a similar vein, MapR built Drill [22] directly on HDFS, and Meta created Presto [185] to replace Hive.  
 
 - 通过进一步的手法，Cloudera在HDFS之上构建了一个关系数据库管理系统（RDBMS）Impala [150]，但并没有使用Hadoop。他们意识到Hadoop在SQL DBMS的内部接口中没有存在的必要，因此将其从他们的技术栈中配置了出去，转而使用直接构建在HDFS上的软件。
 - 类似地，MapR在HDFS之上直接构建了Drill [22]，
 - Meta则创建了Presto [185]来替代Hive。
   
-> **Discussion**: MR’s deficiencies were so significant that it could not be saved despite the adoption and enthusiasm from the developer community. Hadoop died about a decade ago, leaving a legacy of HDFS clusters in enterprises and a collection of companies dedicated to making money from them. At present, HDFS has lost its <u>luster</u>光彩, as enterprises realize that there are **better distributed storage alternatives** [124]. Meanwhile, distributed RDBMSs are <u>thriving</u>欣欣向荣, especially in the cloud.  
-> Some aspects of MR system implementations related to scalability, elasticity, and fault tolerance are <u>carried over</u>延续，保留 into distributed RDBMSs. MR also brought about the revival of shared-disk architectures with disaggregated storage, subsequently giving rise to open-source file formats and data lakes (see Sec. 3.3). Hadoop’s limitations opened the door for other data processing platforms, namely Spark [201] and Flink [109]. Both systems started as better implementations of MR with procedural APIs but have since added support for SQL [105].
+> **Discussion**: MR’s <u>deficiencies</u>缺陷 were so significant that it could not be saved despite the adoption and enthusiasm from the developer community. Hadoop died about a decade ago, leaving a legacy of HDFS clusters in enterprises and a collection of companies dedicated to making money from them. At present, HDFS has lost its <u>luster</u>光彩, as enterprises realize that there are **better distributed storage alternatives** [124]. Meanwhile, distributed RDBMSs are <u>thriving</u>欣欣向荣, especially in the cloud.  
+> Some aspects of MR system implementations related to scalability, elasticity, and fault tolerance are <u>carried over</u>延续，保留 into distributed RDBMSs. MR also brought about the <u>revival</u>复兴 of shared-disk architectures with disaggregated storage, subsequently <u>giving rise to</u>引起，导致，产生 open-source file formats and data lakes (see Sec. 3.3). `Hadoop’s limitations opened the door for other data processing platforms, namely Spark [201] and Flink [109]. Both systems started as better implementations of MR with procedural APIs but have since added support for SQL [105]`.
 
 - 与可扩展性、弹性和容错性相关的某些MR系统实施方面被引入到分布式关系数据库管理系统（RDBMS）中。MR还带来了共享磁盘架构的复兴，伴随着去耦合存储的发展，这随后催生了开源文件格式和数据湖（见第3.3节）。Hadoop的局限性为其他数据处理平台打开了大门，即Spark [201]和Flink [109]。这两个系统最初是作为MR的更好实现，拥有过程API，但后来增加了对SQL的支持。
 
 ## 2.2 Key/Value Stores
-> The key/value (KV) data model is the simplest model possible. It represents the following binary relation: (key,value) A KV DBMS represents a collection of data as an associative array that maps a key to a value. The value is typically an untyped array of bytes (i.e., a blob), and the DBMS is unaware of its contents. It is up to the application to maintain the schema and parse the value into its corresponding parts. Most KV DBMSs only provide **get/set/delete operations on a single value**.  
+> The key/value (KV) data model is the simplest model possible. It represents the following binary relation:  
+``` Python
+(key,value) 
+```
+> A KV DBMS represents a collection of data as an associative array that maps a key to a value. The value is typically an untyped array of bytes (i.e., a blob), and the DBMS is unaware of its contents. It is up to the application to maintain the schema and parse the value into its corresponding parts. Most KV DBMSs only provide **get/set/delete operations on a single value**.  
 > In the 2000s, several new Internet companies built their own shared-nothing, distributed KV stores for <u>narrowly focused applications</u>特定的应用程序, like caching and storing session data. For caching, Memcached [131] is the most well-known example of this approach. Redis [67] markets itself as a Memcached replacement, offering a more robust query API with checkpointing support. For more persistent application data, Amazon created the Dynamo KV store in 2007 [125]. Such systems offer higher and more predictable performance, compared to a RDBMS, in exchange for **more limited functionality**.  
 
 - Memcached是这种方法中最著名的例子
@@ -106,7 +112,7 @@ tags:
 
 - 第二类KV DBMS是嵌入式存储管理器，旨在与更高层次的应用程序在同一地址空间中运行。第一个独立的嵌入式KV DBMS是早期的BerkeleyDB。最近的显著条目包括谷歌的LevelDB，后来Meta将其分叉为RocksDB。
 
-> Discussion: Key/value stores provide a quick “`out-of-the-box`开箱即用” way for developers to store data, compared to the more <u>laborious</u>耗时费力的 effort required to set up a table in a RDBMS. Of course, it is dangerous to use a KV store in a complex application that requires <u>more than just a binary relation</u>不仅仅是二元关系. `If an application requires multiple fields in a record, then KV stores are probably a bad idea.` Not only must the application parse record fields, but also there are no secondary indexes to retrieve other fields by value. Likewise, developers must implement joins or multi-get operations in their application.  
+> **Discussion**: Key/value stores provide a quick “`out-of-the-box`开箱即用” way for developers to store data, compared to the more <u>laborious</u>耗时费力的 effort required to set up a table in a RDBMS. Of course, it is dangerous to use a KV store in a complex application that requires <u>more than just a binary relation</u>不仅仅是二元关系. `If an application requires multiple fields in a record, then KV stores are probably a bad idea.` Not only must the application parse record fields, but also there are no secondary indexes to retrieve other fields by value. Likewise, developers must implement joins or multi-get operations in their application.  
 
 - 如果一个应用程序需要记录中的多个字段，那么使用KV存储可能并不是一个好主意
 - 原因： 应用程序不仅必须解析记录字段，而且没有二级索引来通过值检索其他字段。同样，开发人员必须在其应用程序中实现联接或多次获取操作。
